@@ -1,2 +1,15 @@
 .venv/
 .env
+__pycache__/
+*.pyc
+instance/
+migrations/
+*.sqlite3
+.DS_Store
+*.log
+.idea/
+.vscode/
+coverage
+
+*.egg-info/
+dist/

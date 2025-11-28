@@ -2,16 +2,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pydantic_settings import BaseSettings
+from pydantic import Field
 import os
 
+
 class Settings(BaseSettings):
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://lab_user:lab_pass@localhost:5432/lab_db"
-    )
+    secret_key: str = Field(
+        default="your-super-secret-key-change-in-production")
+    algorithm: str = Field(default="HS256")
+    access_token_expire_minutes: int = Field(default=30)
+    DATABASE_URL: str = Field(
+        default="postgresql://lab_user:lab_pass@localhost:5432/lab_db")
 
     class Config:
         env_file = ".env"
+        case_sensitive = False
 
 
 settings = Settings()
@@ -38,6 +43,7 @@ def get_db():
         yield db
     finally:
         db.close()
-        
+
+
 def create_tables():
     Base.metadata.create_all(bind=engine)

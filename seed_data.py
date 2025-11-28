@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
-from app.config.database import SessionLocal, engine
-from app.models.lab_entities import *
+from app.config.database import SessionLocal, engine, Base
+from app.models.lab_entities import (
+    TeamMember, ResearchProject, Publication, Event, News, AdvisoryBoardMember
+)
 from app.models.user import User
 from datetime import datetime, timedelta
 from app.utils.auth import get_password_hash
