@@ -106,3 +106,21 @@ class News(NewsBase):
     
     class Config:
         from_attributes = True
+        
+class AdvisoryBoardMemberBase(BaseModel):
+    name: str
+    position: Optional[str] = None
+    institution: Optional[str] = None
+    expertise: Optional[str] = None
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    is_active: bool = True
+
+class AdvisoryBoardMemberCreate(AdvisoryBoardMemberBase):
+    pass
+
+class AdvisoryBoardMember(AdvisoryBoardMemberBase):
+    id: int
+
+    class Config:
+        from_attributes = True
