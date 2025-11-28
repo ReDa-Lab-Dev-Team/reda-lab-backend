@@ -1,12 +1,11 @@
 from fastapi import Request, HTTPException
 from collections import defaultdict
 import time
-from datetime import datetime, timedelta
 
 request_counts = defaultdict(list)
 
 async def rate_limit_middleware(request: Request, call_next):
-    client_ip = request.client.host
+    client_ip = request.client.host if request.client else "unknown"
     current_time = time.time()
     
     # Clean old requests (older than 1 minute)
