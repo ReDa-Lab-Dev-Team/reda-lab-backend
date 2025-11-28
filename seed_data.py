@@ -8,27 +8,38 @@ from datetime import datetime, timedelta
 from app.utils.auth import get_password_hash
 import random
 
+
 def init_db():
     # Create tables
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
-    
+
     try:
         # Create admin user
         admin_user = db.query(User).filter(User.username == "admin").first()
         if not admin_user:
+            try:
+                hashed_pw = get_password_hash("admin123")
+            except Exception as hash_error:
+                print(f"Warning: Password hashing error: {hash_error}")
+                # Fallback: use a simple bcrypt hash
+                from passlib.context import CryptContext
+                pwd_context = CryptContext(
+                    schemes=["bcrypt"], deprecated="auto")
+                hashed_pw = pwd_context.hash("admin123")
+
             admin_user = User(
                 email="admin@lab.com",
                 username="admin",
-                hashed_password=get_password_hash("admin123"),
+                hashed_password=hashed_pw,
                 is_admin=True,
                 is_active=True
             )
             db.add(admin_user)
             db.commit()
             print("Admin user created: admin / admin123")
-        
+
         # Create sample team members
         team_members = [
             TeamMember(
@@ -64,17 +75,18 @@ def init_db():
                 is_active=True
             )
         ]
-        
+
         for member in team_members:
-            existing = db.query(TeamMember).filter(TeamMember.email == member.email).first()
+            existing = db.query(TeamMember).filter(
+                TeamMember.email == member.email).first()
             if not existing:
                 db.add(member)
-        
+
         db.commit()
-        
+
         # Get team members for relationships
         all_members = db.query(TeamMember).all()
-        
+
         # Create sample projects
         projects = [
             ResearchProject(
@@ -105,14 +117,15 @@ def init_db():
                 budget=750000
             )
         ]
-        
+
         for project in projects:
-            existing = db.query(ResearchProject).filter(ResearchProject.title == project.title).first()
+            existing = db.query(ResearchProject).filter(
+                ResearchProject.title == project.title).first()
             if not existing:
                 db.add(project)
-        
+
         db.commit()
-        
+
         # Create sample publications
         publications = [
             Publication(
@@ -140,33 +153,34 @@ def init_db():
                 is_published=True
             )
         ]
-        
+
         for pub in publications:
-            existing = db.query(Publication).filter(Publication.title == pub.title).first()
+            existing = db.query(Publication).filter(
+                Publication.title == pub.title).first()
             if not existing:
                 db.add(pub)
-        
+
         db.commit()
-        
+
         # Assign authors to publications and contributors to projects
         all_projects = db.query(ResearchProject).all()
         all_publications = db.query(Publication).all()
-        
+
         # Randomly assign team members to projects and publications
         for i, project in enumerate(all_projects):
             contributors = random.sample(all_members, min(2, len(all_members)))
             for member in contributors:
                 if member not in project.contributors:
                     project.contributors.append(member)
-        
+
         for i, publication in enumerate(all_publications):
             authors = random.sample(all_members, min(3, len(all_members)))
             for member in authors:
                 if member not in publication.authors:
                     publication.authors.append(member)
-        
+
         db.commit()
-        
+
         # Create sample events
         events = [
             Event(
@@ -195,14 +209,15 @@ def init_db():
                 is_active=False
             )
         ]
-        
+
         for event in events:
-            existing = db.query(Event).filter(Event.title == event.title).first()
+            existing = db.query(Event).filter(
+                Event.title == event.title).first()
             if not existing:
                 db.add(event)
-        
+
         db.commit()
-        
+
         # Create sample news
         news_items = [
             News(
@@ -221,22 +236,23 @@ def init_db():
                 published_date=datetime.now() - timedelta(days=15)
             )
         ]
-        
+
         for news in news_items:
             existing = db.query(News).filter(News.title == news.title).first()
             if not existing:
                 news.created_by = admin_user.id
                 db.add(news)
-        
+
         db.commit()
-        
+
         print("Database seeded successfully!")
-        
+
     except Exception as e:
         print(f"Error seeding database: {e}")
         db.rollback()
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     init_db()
