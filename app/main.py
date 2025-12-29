@@ -1,43 +1,37 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import auth, public, admin
-from app.middleware.rate_limit import rate_limit_middleware
-from app.config.database import create_tables
+from app.api.v1 import auth, admin, public
 
 app = FastAPI(
-    title="Lab Information System API",
-    description="Backend API for lab information management system",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    title="Reda Lab API",
+    description="Backend API for Reda Lab Management System",
+    version="1.0.0"
 )
 
-# Create tables on startup
-@app.on_event("startup")
-def on_startup():
-    create_tables()
-
-# CORS middleware
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Rate limiting middleware
-app.middleware("http")(rate_limit_middleware)
-
 # Include routers
-app.include_router(auth.router)
-app.include_router(public.router)
-app.include_router(admin.router)
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+app.include_router(public.router, prefix="/public", tags=["Public"])
+
 
 @app.get("/")
 async def root():
-    return {"message": "Lab Information System API"}
+    return {
+        "message": "Welcome to Reda Lab API",
+        "docs": "/docs",
+        "redoc": "/redoc"
+    }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

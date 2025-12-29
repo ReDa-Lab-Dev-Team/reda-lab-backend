@@ -1,5 +1,6 @@
 .venv/
 .env
+.env.*
 __pycache__/
 *.pyc
 instance/
@@ -13,3 +14,6 @@ coverage
 
 *.egg-info/
 dist/
+
+# custom
+*.postman_collection.json

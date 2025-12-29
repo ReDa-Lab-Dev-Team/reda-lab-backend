@@ -4,6 +4,11 @@ from sqlalchemy.orm import sessionmaker
 from pydantic_settings import BaseSettings
 from pydantic import Field
 import os
+from dotenv import load_dotenv
+
+# Load .env file from project root
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+load_dotenv(env_path)
 
 
 class Settings(BaseSettings):
@@ -11,8 +16,10 @@ class Settings(BaseSettings):
         default="your-super-secret-key-change-in-production")
     algorithm: str = Field(default="HS256")
     access_token_expire_minutes: int = Field(default=30)
-    DATABASE_URL: str = Field(
-        default="postgresql://lab_user:lab_pass@localhost:5432/lab_db")
+    database_url: str = Field(
+        default="postgresql://lab_user:lab_pass@localhost:5432/lab_db",
+        alias="DATABASE_URL"
+    )
 
     class Config:
         env_file = ".env"
@@ -22,7 +29,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.database_url,
     pool_pre_ping=True,  # Verify connections before use
     pool_recycle=300,    # Recycle connections after 5 minutes
     echo=True
