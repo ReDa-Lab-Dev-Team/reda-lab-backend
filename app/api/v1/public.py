@@ -17,7 +17,7 @@ from app.models.lab_entities import (
     News as NewsModel
 )
 
-router = APIRouter(prefix="/public", tags=["Public Content"])
+router = APIRouter()
 
 
 @router.get("/projects", response_model=List[ResearchProject])
