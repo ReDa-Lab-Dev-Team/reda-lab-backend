@@ -13,3 +13,6 @@ coverage
 
 *.egg-info/
 dist/
+
+# custom
+*.postman_collection.json

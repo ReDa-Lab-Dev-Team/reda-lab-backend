@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import os
 
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
@@ -10,9 +11,9 @@ from sqlalchemy.orm import Session
 from app.config.database import get_db
 from app.models.user import User
 
-SECRET_KEY = "secret-key-here"  # Replace with your actual secret key
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = os.getenv("SECRET_KEY")  # Replace with your actual secret key
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 # Use argon2 as the primary scheme (more compatible and secure)
 pwd_context = CryptContext(
