@@ -88,6 +88,7 @@ async def get_news(
     limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
+    
     news = db.query(NewsModel).filter(NewsModel.is_published == True).order_by(
         NewsModel.published_date.desc()
     ).offset(skip).limit(limit).all()
