@@ -67,7 +67,7 @@ This command will:
 
 ### Option 2: Local Development Setup
 
-#### 1. Install Dependencies
+#### 1. Install Dependencies (Build Test)
 
 ```bash
 # Create a virtual environment (optional but recommended)
@@ -81,6 +81,22 @@ source venv/bin/activate
 
 # Install Python dependencies
 pip install -r requirements.txt
+```
+
+#### 1.a. Using UV (Astral)
+
+```bash
+# Install Python 3.12 if not available
+uv python install 3.12
+
+# Create virtual environment
+uv venv --python 3.12
+
+# Activate virtual environment
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+
+# Install dependencies
+uv sync
 ```
 
 #### 2. Set Up Database

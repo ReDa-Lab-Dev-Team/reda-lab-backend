@@ -4,6 +4,7 @@ import time
 
 request_counts = defaultdict(list)
 
+# Simple in-memory rate limiting middleware (100 requests per minute)
 async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     current_time = time.time()

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
 load_dotenv(env_path)
 
-
+# Settings for the application
 class Settings(BaseSettings):
     secret_key: str = Field(
         default="your-super-secret-key-change-in-production")
@@ -25,9 +25,9 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
-
 settings = Settings()
 
+# Database setup
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,  # Verify connections before use
@@ -42,7 +42,6 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
-
 
 def get_db():
     db = SessionLocal()
