@@ -17,3 +17,4 @@ dist/
 
 # custom
 *.postman_collection.json
+*.yml
