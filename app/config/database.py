@@ -19,6 +19,8 @@ class Settings(BaseSettings):
         default="postgresql://lab_user:lab_pass@localhost:5432/lab_db",
         alias="DATABASE_URL"
     )
+    environment: str = Field(default="development")
+    debug: bool = Field(default=True)
 
     class Config:
         env_file = ".env"
@@ -31,7 +33,7 @@ engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,  # Verify connections before use
     pool_recycle=300,    # Recycle connections after 5 minutes
-    echo=True
+    echo=settings.debug
 )
 
 SessionLocal = sessionmaker(
@@ -49,6 +51,15 @@ def get_db():
     finally:
         db.close()
 
-
 def create_tables():
+    """Create all database tables"""
+    # Import models here to register them with Base
+    from app.models.user import User
+    from app.models.lab_entities import (
+        TeamMember, ResearchProject, Publication, 
+        Event, AdvisoryBoardMember, News
+    )
+    
+    # Create all tables
     Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully!")
