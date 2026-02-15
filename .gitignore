@@ -17,4 +17,5 @@ dist/
 
 # custom
 *.postman_collection.json
-*.yml
+
+docker-compose.yml
