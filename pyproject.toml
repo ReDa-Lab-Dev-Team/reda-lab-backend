@@ -5,9 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
+    "alembic>=1.18.4",
     "fastapi>=0.128.0",
+<<<<<<< HEAD
     "passlib[argon2]>=1.7.4",
     "psycopg2-binary>=2.9.11",
+=======
+    "psycopg2>=2.9.11",
+>>>>>>> 365b125ee54d464db5c63affa6248616cf79afef
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
     "python-dotenv>=1.2.1",
