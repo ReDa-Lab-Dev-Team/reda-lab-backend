@@ -1,46 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import auth, admin, public
-from app.models import user, lab_entities 
-from app.config.database import Base, engine
+from app.config.database import engine, Base
+from app.models import admin as admin_model, lab_entities
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="Reda Lab API",
-    description="Backend API for Reda Lab Management System",
-    version="1.0.0"
-)
+app = FastAPI(title="REDA Lab API")
 
-# Configure CORS
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
-app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-
-# Admin routes
-app.include_router(admin.router, prefix="/admin", tags=["Admin"])
-
-# Public routes
-app.include_router(public.router, prefix="/public", tags=["Public"])
-
+app.include_router(auth.router)
+app.include_router(admin.router)
+app.include_router(public.router)
 
 @app.get("/")
-async def root():
-    return {
-        "message": "Welcome to Reda Lab API",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+def read_root():
+    return {"message": "Welcome to REDA Lab API"}

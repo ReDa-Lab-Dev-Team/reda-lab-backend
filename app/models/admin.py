@@ -1,24 +1,20 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, TIMESTAMP
+from sqlalchemy.sql.expression import text
 from sqlalchemy.sql import func
 
 from app.config.database import Base
 import passlib.hash as _hash
 
 
-class User(Base):
-    __tablename__ = "users"
+class Admin(Base):
+    __tablename__ = "admins"
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(100), unique=True, index=True, nullable=False)
     username = Column(String(50), unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=func.now())
-    
-    # Relationships
-    created_news = relationship("News", back_populates="author")
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
     def verify_password(self, password: str) -> bool:
         return _hash.bcrypt.verify(password, self.hashed_password)

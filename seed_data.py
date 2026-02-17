@@ -3,9 +3,9 @@ from app.config.database import SessionLocal, engine, Base
 from app.models.lab_entities import (
     TeamMember, ResearchProject, Publication, Event, News, AdvisoryBoardMember
 )
-from app.models.user import User
+from app.models.admin import User
 from datetime import datetime, timedelta
-from app.utils.auth import get_password_hash
+from app.utils.oauth2 import get_password_hash
 import random
 
 

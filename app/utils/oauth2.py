@@ -2,52 +2,41 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-import os
 
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.config.config import settings
 from app.config.database import get_db
-from app.models.user import User
+from app.models.admin import Admin
 
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = settings.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
-# Use argon2 as the primary scheme (more compatible and secure)
-# pwd_context = CryptContext(
-#     schemes=["argon2", "bcrypt"],
-#     deprecated="auto"
-# )
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception as e:
-        print(f"Password verification error: {e}")
-        return False
+
+def verify(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    # Ensure password is not too long for bcrypt (max 72 bytes)
-    if len(password.encode('utf-8')) > 72:
-        password = password[:72]
     return pwd_context.hash(password)
 
 
-def get_user(db: Session, username: str) -> Optional[User]:
-    return db.query(User).filter(User.username == username).first()
+def get_admin_by_email(db: Session, email: str) -> Optional[Admin]:
+    return db.query(Admin).filter(Admin.email == email).first()
 
 
-def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
-    user = get_user(db, username)
-    if not user or not verify_password(password, user.hashed_password):
+def authenticate_user(db: Session, email: str, password: str) -> Optional[Admin]:
+    admin = get_admin_by_email(db, email)
+    if not admin or not verify(password, admin.hashed_password):
         return None
-    return user
+    return admin
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -69,24 +58,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        email: str = payload.get("sub")
+        if email is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = get_user(db, username=username)
-    if user is None:
+    admin = get_admin_by_email(db, email=email)
+    if admin is None:
         raise credentials_exception
-    return user
+    return admin
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
+async def get_current_active_user(current_user: Admin = Depends(get_current_user)):
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
-async def get_current_admin_user(current_user: User = Depends(get_current_active_user)):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=400, detail="Inactive admin account")
     return current_user

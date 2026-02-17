@@ -1,4 +1,4 @@
-from .user import UserCreate, UserResponse, UserLogin, Token
+from .admin import AdminCreate, AdminResponse, AdminLogin, Token, User, UserCreate, UserResponse, UserLogin
 from .lab_entities import (
     # Categories
     CategoryCreate, CategoryResponse,
@@ -17,7 +17,11 @@ from .lab_entities import (
 )
 
 __all__ = [
-    "UserCreate", "UserResponse", "UserLogin", "Token",
+    # Admin schemas (new names)
+    "AdminCreate", "AdminResponse", "AdminLogin", "Token",
+    # Backward compatibility aliases
+    "User", "UserCreate", "UserResponse", "UserLogin",
+    # Lab entities
     "CategoryCreate", "CategoryResponse",
     "ResearchProjectCreate", "ResearchProjectResponse",
     "PublicationCreate", "PublicationResponse",
