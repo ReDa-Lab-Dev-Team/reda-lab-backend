@@ -1,30 +1,37 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
+# Base schema for user
 class UserBase(BaseModel):
     email: EmailStr
     username: str
-    is_active: bool = True
 
+# Schema for creating a user
 class UserCreate(UserBase):
     password: str
 
-class User(UserBase):
+# Schema for user login
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+# Schema for user response
+class UserResponse(UserBase):
     id: int
+    is_active: bool
     is_admin: bool
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
-class UserLogin(BaseModel):
-    username: str
-    password: str
+# Add alias for backward compatibility with auth.py
+User = UserResponse
 
+# Token schemas
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    email: Optional[str] = None

@@ -1,5 +1,5 @@
 from pydantic import ValidationError
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from typing import Any
 
 def validate_input(data: Any, schema: Any) -> Any:

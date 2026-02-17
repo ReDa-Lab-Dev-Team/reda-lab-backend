@@ -7,19 +7,20 @@ import os
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-
+from app.config.config import settings
 from app.config.database import get_db
 from app.models.user import User
 
-SECRET_KEY = os.getenv("SECRET_KEY")  # Replace with your actual secret key
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 # Use argon2 as the primary scheme (more compatible and secure)
-pwd_context = CryptContext(
-    schemes=["argon2", "bcrypt"],
-    deprecated="auto"
-)
+# pwd_context = CryptContext(
+#     schemes=["argon2", "bcrypt"],
+#     deprecated="auto"
+# )
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
