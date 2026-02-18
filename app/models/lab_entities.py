@@ -32,11 +32,9 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, nullable=False)
     description = Column(Text)
-    Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False) 
+    created_by = Column(Integer, ForeignKey("admins.id", ondelete="CASCADE"), nullable=False) 
     
     projects = relationship("ResearchProject", secondary=project_categories, back_populates="categories")
-
-# --- ResearchProject ---
 
 class ResearchProject(Base):
     __tablename__ = "research_projects"
@@ -51,7 +49,7 @@ class ResearchProject(Base):
     status = Column(String(50), default="active")
     funding_source = Column(String(100))
     budget = Column(Integer)
-    Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False) 
+    created_by = Column(Integer, ForeignKey("admins.id", ondelete="CASCADE"), nullable=False) 
     
     contributors = relationship("TeamMember", secondary=project_contributors, back_populates="projects")
     publications = relationship("Publication", back_populates="project")
@@ -93,7 +91,7 @@ class Event(Base):
     location = Column(String(200))
     event_type = Column(String(50))
     is_active = Column(Boolean, default=True)
-    Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False) 
+    created_by = Column(Integer, ForeignKey("admins.id", ondelete="CASCADE"), nullable=False) 
 
 # --- News ---
 
@@ -121,12 +119,10 @@ class TeamMember(Base):
     email = Column(String(100))
     photo_url = Column(String(255))
     is_active = Column(Boolean, default=True)
-    Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False) 
+    created_by = Column(Integer, ForeignKey("admins.id", ondelete="CASCADE"), nullable=False) 
     
     projects = relationship("ResearchProject", secondary=project_contributors, back_populates="contributors")
     publications = relationship("Publication", secondary=publication_authors, back_populates="authors")
-
-# --- AdvisoryBoardMember ---
 
 class AdvisoryBoardMember(Base):
     __tablename__ = "advisory_board"
@@ -139,4 +135,4 @@ class AdvisoryBoardMember(Base):
     bio = Column(Text)
     photo_url = Column(String(255))
     is_active = Column(Boolean, default=True)
-    Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False) 
+    created_by = Column(Integer, ForeignKey("admins.id", ondelete="CASCADE"), nullable=False)

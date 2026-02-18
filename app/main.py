@@ -5,7 +5,9 @@ from app.config.database import engine, Base
 from app.models import admin as admin_model, lab_entities
 
 # Create all tables
-Base.metadata.create_all(bind=engine)
+
+## Now we use Alembic for migrations, so we don't need to create tables here. Alembic will handle it based on the models and migration scripts.
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="REDA Lab API")
 
