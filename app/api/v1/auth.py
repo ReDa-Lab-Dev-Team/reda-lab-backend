@@ -125,14 +125,14 @@ async def delete_admin(
     if current_admin.id != admin_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this account"
+            detail={"msg": "Not authorized to delete this account"}
         )
     
     admin = db.query(Admin).filter(Admin.id == admin_id).first()
     if not admin:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Admin not found"
+            detail={"msg": "Admin not found"}
         )
     
     db.delete(admin)
