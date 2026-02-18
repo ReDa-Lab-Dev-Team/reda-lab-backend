@@ -1,75 +1,65 @@
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+# this file is for handling the authentication and authorization of users using OAuth2 and JWT tokens
 
-from fastapi import HTTPException, Depends, status
+import jwt
+from jwt.exceptions import InvalidTokenError
+from datetime import datetime, timedelta
+from .. import schemas
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.config.config import settings
-from app.config.database import get_db
+from app.config import database
+from app.schemas.admin import TokenData
 from app.models.admin import Admin
 
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = settings.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def verify(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def get_admin_by_email(db: Session, email: str) -> Optional[Admin]:
-    return db.query(Admin).filter(Admin.email == email).first()
-
-
-def authenticate_user(db: Session, email: str, password: str) -> Optional[Admin]:
-    admin = get_admin_by_email(db, email)
-    if not admin or not verify(password, admin.hashed_password):
-        return None
-    return admin
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def verify_access_token(token: str):
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=status.HTTP_401_UNAUTHORIZED, 
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        headers={"WWW-Authenticate": "Bearer"}
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        id: str = payload.get("admin_id")
+        print("Decoded token payload:", payload)
+        if id is None:
             raise credentials_exception
-    except JWTError:
+        token_data = TokenData(id=id)
+        print("Decoded token data:", token_data)
+    except InvalidTokenError:
         raise credentials_exception
-    admin = get_admin_by_email(db, email=email)
-    if admin is None:
-        raise credentials_exception
-    return admin
+    credentials_exception
+    return token_data
+    
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
+    token_data = verify_access_token(token)
+    user = db.query(Admin).filter(Admin.id == token_data.id).first()
+    return user
 
 
-async def get_current_active_user(current_user: Admin = Depends(get_current_user)):
-    if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive admin account")
-    return current_user
+# def get_admin_by_email(db: Session, email: str) -> Optional[Admin]:
+#     return db.query(Admin).filter(Admin.email == email).first()
+
+
+
+# async def get_current_active_user(current_user: Admin = Depends(get_current_user)):
+#     if not current_user.is_active:
+#         raise HTTPException(status_code=400, detail="Inactive admin account")
+#     return current_user

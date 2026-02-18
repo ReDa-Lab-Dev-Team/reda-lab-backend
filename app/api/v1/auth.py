@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta
-
 from app.config.database import get_db
 from app.models.admin import Admin
 from app.schemas.admin import AdminCreate, AdminResponse, Token, AdminLogin
-from app.utils.oauth2 import (
-    authenticate_user, create_access_token, get_password_hash, get_current_active_user
-)
+from app.utils import oauth2
+from app.utils.hash_pw import hash_pw, verify_password
+from app.utils.oauth2 import get_current_user
+
+    
+
 
 router = APIRouter(
     prefix="/auth",
@@ -16,40 +17,58 @@ router = APIRouter(
 
 
 @router.post("/register", response_model=AdminResponse)
-async def register_admin(admin: AdminCreate, db: Session = Depends(get_db)):
+async def register_admin(admin: AdminCreate, db: Session = Depends(get_db)): 
+    
     db_admin = db.query(Admin).filter(
         (Admin.email == admin.email) | (Admin.username == admin.username)
     ).first()
+    
     if db_admin:
         raise HTTPException(
-            status_code=400, detail="Email or username already registered")
+            status_code=status.HTTP_409_CONFLICT, detail={"msg": "Email or username already registered"})
 
-    hashed_password = get_password_hash(admin.password)
-    db_admin = Admin(
+    hashed_password = hash_pw(admin.password)
+    new_admin = Admin(
         email=admin.email,
         username=admin.username,
         hashed_password=hashed_password
     )
-    db.add(db_admin)
+    db.add(new_admin)
     db.commit()
-    db.refresh(db_admin)
-    return db_admin
+    db.refresh(new_admin)
+    return new_admin
 
 @router.post("/login", response_model=Token)
-async def login_admin(admin_credentials: AdminLogin, db: Session = Depends(get_db)):
-    admin = authenticate_user(db, admin_credentials.email, admin_credentials.password)
+async def login_admin(admin_credentials: AdminLogin = Depends(), db: Session = Depends(get_db)):
+    
+    admin = db.query(Admin).filter(Admin.email == admin_credentials.email).first()
+    
     if not admin:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "Incorrect email or password"},
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(
-        data={"sub": admin.email}, expires_delta=access_token_expires
+        
+    if not verify_password(admin_credentials.password, admin.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"msg": "Incorrect email or password"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = oauth2.create_access_token(
+        data={"admin_id": admin.id}
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.get("/all_admins", response_model=list[AdminResponse])
+async def read_all_admins(current_admin: AdminResponse = Depends(get_current_user),db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    if current_admin.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail= f"Not authorized to perform requested action!")
+    admins = db.query(Admin).all()
+    return admins
+
 @router.get("/me", response_model=AdminResponse)
-async def read_admin_me(current_admin: AdminResponse = Depends(get_current_active_user)):
+async def read_admin_me(current_admin: AdminResponse = Depends(get_current_user)):
     return current_admin

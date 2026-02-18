@@ -1,10 +1,17 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from fastapi import Form
 
 # Base schema for admin
 class AdminBase(BaseModel):
     email: EmailStr
+    @field_validator('email')
+    @classmethod
+    def validate_email_domain(cls, v):
+        if not v.endswith('@gmail.com'):
+            raise ValueError('Email must be from @gmail.com domain')
+        return v
     username: str
 
 # Schema for creating an admin
@@ -12,9 +19,14 @@ class AdminCreate(AdminBase):
     password: str
 
 # Schema for admin login
-class AdminLogin(BaseModel):
-    email: EmailStr
-    password: str
+class AdminLogin:
+    def __init__(
+        self,
+        email: EmailStr = Form(...),
+        password: str = Form(...)
+    ):
+        self.email = email
+        self.password = password
 
 # Schema for admin response
 class AdminResponse(AdminBase):
@@ -36,4 +48,5 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    id: Optional[int] = None
+    

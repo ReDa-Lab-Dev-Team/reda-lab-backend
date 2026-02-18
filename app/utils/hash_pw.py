@@ -1,12 +1,13 @@
 # this file is for hashing the pw
 
-from passlib.context import CryptContext
-# using "bcrypt" algorithm to hash the password
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from pwdlib import PasswordHash
 
-def hash(password: str):
-    return pwd_context.hash(password)
+# using Argon2 algorithm to hash the password
+pwd_hash = PasswordHash.recommended()
+
+def hash_pw(password: str):
+    return pwd_hash.hash(password)
 
 # to verify the password, we need to compare the hashed password with the plain password
-def verify(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str):
+    return pwd_hash.verify(plain_password, hashed_password)
