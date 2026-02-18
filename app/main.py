@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import auth, admin, public
-from app.config.database import engine, Base
-from app.models import admin as admin_model, lab_entities
+from app.api.v1 import auth
+from app.api.v1.admin import router as admin_router
+# from app.config.database import engine, Base
 
 # Create all tables
 
@@ -22,7 +22,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
-# app.include_router(admin.router)
+app.include_router(admin_router, prefix="/api/v1")
 # app.include_router(public.router)
 
 @app.get("/")
