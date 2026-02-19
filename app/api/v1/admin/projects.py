@@ -8,7 +8,7 @@ from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
 from app.schemas.lab_entities import ResearchProjectCreate, ResearchProjectResponse
-from app.models.lab_entities import ResearchProject
+from app.models.lab_entities import ResearchProject, Category
 
 router = APIRouter(prefix="/projects", tags=["Admin - Research Projects"])
 
@@ -29,8 +29,7 @@ async def get_all_projects(
     """Get all research projects with pagination and filters (Admin only)"""
     try:
         query = db.query(ResearchProject)
-        
-        # Apply filters
+
         if search:
             query = query.filter(
                 or_(
@@ -38,21 +37,15 @@ async def get_all_projects(
                     ResearchProject.description.ilike(f"%{search}%")
                 )
             )
-        
+
         if status:
             query = query.filter(ResearchProject.status == status)
-        
+
         if category_id:
-            query = query.filter(ResearchProject.category_id == category_id)
-        
-        # Apply sorting
+            query = query.join(ResearchProject.categories).filter(Category.id == category_id)
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "title":
-            query = query.order_by(order_func(ResearchProject.title))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(ResearchProject.updated_at))
-        else:
-            query = query.order_by(order_func(ResearchProject.created_at))
+        query = query.order_by(order_func(getattr(ResearchProject, sort_by)))
         
         # Apply pagination
         projects = query.offset(skip).limit(limit).all()
@@ -88,7 +81,7 @@ async def create_project(
 ):
     """Create a new research project (Admin only)"""
     try:
-        db_project = ResearchProject(**project.model_dump(exclude_unset=True))
+        db_project = ResearchProject(**project.model_dump(exclude_unset=True),created_by=current_admin.id)
         db.add(db_project)
         db.commit()
         db.refresh(db_project)

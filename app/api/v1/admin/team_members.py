@@ -22,6 +22,7 @@ async def get_all_team_members(
     role: Optional[str] = None,
     department: Optional[str] = None,
     status: Optional[str] = None,
+    is_active: Optional[bool] = None,
     sort_by: str = Query("created_at", pattern="^(name|position|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
@@ -30,8 +31,7 @@ async def get_all_team_members(
     """Get all team members with pagination and filters (Admin only)"""
     try:
         query = db.query(TeamMember)
-        
-        # Apply filters
+
         if search:
             query = query.filter(
                 or_(
@@ -40,26 +40,12 @@ async def get_all_team_members(
                     TeamMember.bio.ilike(f"%{search}%")
                 )
             )
-        
-        if role:
-            query = query.filter(TeamMember.role == role)
-        
-        if department:
-            query = query.filter(TeamMember.department == department)
-        
-        if status:
-            query = query.filter(TeamMember.status == status)
-        
-        # Apply sorting
+
+        if is_active is not None:
+            query = query.filter(TeamMember.is_active == is_active)
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "name":
-            query = query.order_by(order_func(TeamMember.name))
-        elif sort_by == "position":
-            query = query.order_by(order_func(TeamMember.position))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(TeamMember.updated_at))
-        else:
-            query = query.order_by(order_func(TeamMember.created_at))
+        query = query.order_by(order_func(getattr(TeamMember, sort_by)))
         
         # Apply pagination
         members = query.offset(skip).limit(limit).all()
@@ -95,7 +81,7 @@ async def create_team_member(
 ):
     """Create a new team member (Admin only)"""
     try:
-        db_member = TeamMember(**member.model_dump(exclude_unset=True))
+        db_member = TeamMember(**member.model_dump(exclude_unset=True),created_by=current_admin.id)
         db.add(db_member)
         db.commit()
         db.refresh(db_member)

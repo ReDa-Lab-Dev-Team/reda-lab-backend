@@ -81,7 +81,7 @@ async def create_advisory_member(
 ):
     """Create a new advisory board member (Admin only)"""
     try:
-        db_member = AdvisoryBoardMember(**member.model_dump(exclude_unset=True))
+        db_member = AdvisoryBoardMember(**member.model_dump(exclude_unset=True),created_by=current_admin.id)
         db.add(db_member)
         db.commit()
         db.refresh(db_member)

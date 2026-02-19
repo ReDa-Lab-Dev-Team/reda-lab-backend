@@ -29,8 +29,7 @@ async def get_all_categories(
     """Get all categories with pagination and filters (Admin only)"""
     try:
         query = db.query(Category)
-        
-        # Apply filters
+
         if search:
             query = query.filter(
                 or_(
@@ -38,21 +37,9 @@ async def get_all_categories(
                     Category.description.ilike(f"%{search}%")
                 )
             )
-        
-        if category_type:
-            query = query.filter(Category.category_type == category_type)
-        
-        if status:
-            query = query.filter(Category.status == status)
-        
-        # Apply sorting
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "name":
-            query = query.order_by(order_func(Category.name))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(Category.updated_at))
-        else:
-            query = query.order_by(order_func(Category.created_at))
+        query = query.order_by(order_func(getattr(Category, sort_by)))
         
         # Apply pagination
         categories = query.offset(skip).limit(limit).all()
@@ -80,6 +67,32 @@ async def get_category(
 
 # ========== CREATE OPERATION ==========
 
+# @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+# async def create_category(
+#     category: CategoryCreate,
+#     db: Session = Depends(get_db),
+#     current_admin: Admin = Depends(get_current_user)
+# ):
+#     """Create a new category (Admin only)"""
+#     try:
+#         db_category = Category(**category.model_dump(exclude_unset=True))
+#         db.add(db_category)
+#         db.commit()
+#         db.refresh(db_category)
+#         return db_category
+#     except IntegrityError:
+#         db.rollback()
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST, 
+#             detail="Category already exists or violates unique constraint"
+#         )
+#     except SQLAlchemyError:
+#         db.rollback()
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+#             detail="Database error occurred"
+#         )
+
 @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(
     category: CategoryCreate,
@@ -88,12 +101,15 @@ async def create_category(
 ):
     """Create a new category (Admin only)"""
     try:
-        db_category = Category(**category.model_dump(exclude_unset=True))
+        db_category = Category(
+            **category.model_dump(exclude_unset=True),
+            created_by=current_admin.id
+        )
         db.add(db_category)
         db.commit()
         db.refresh(db_category)
         return db_category
-    except IntegrityError:
+    except IntegrityError as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
@@ -105,6 +121,7 @@ async def create_category(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Database error occurred"
         )
+
 
 # ========== UPDATE OPERATION ==========
 

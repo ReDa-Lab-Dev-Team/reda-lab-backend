@@ -8,7 +8,7 @@ from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
 from app.schemas.lab_entities import PublicationCreate, PublicationResponse
-from app.models.lab_entities import Publication
+from app.models.lab_entities import Publication, ResearchProject, Category
 
 router = APIRouter(prefix="/publications", tags=["Admin - Publications"])
 
@@ -29,37 +29,24 @@ async def get_all_publications(
 ):
     """Get all publications with pagination and filters (Admin only)"""
     try:
-        query = db.query(Publication)
-        
-        # Apply filters
+        query = db.query(ResearchProject)
+
         if search:
             query = query.filter(
                 or_(
-                    Publication.title.ilike(f"%{search}%"),
-                    Publication.authors.ilike(f"%{search}%"),
-                    Publication.abstract.ilike(f"%{search}%")
+                    ResearchProject.title.ilike(f"%{search}%"),
+                    ResearchProject.description.ilike(f"%{search}%")
                 )
             )
-        
-        if year:
-            query = query.filter(Publication.year == year)
-        
-        if publication_type:
-            query = query.filter(Publication.publication_type == publication_type)
-        
+
+        if status:
+            query = query.filter(ResearchProject.status == status)
+
         if category_id:
-            query = query.filter(Publication.category_id == category_id)
-        
-        # Apply sorting
+            query = query.join(ResearchProject.categories).filter(Category.id == category_id)
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "title":
-            query = query.order_by(order_func(Publication.title))
-        elif sort_by == "year":
-            query = query.order_by(order_func(Publication.year))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(Publication.updated_at))
-        else:
-            query = query.order_by(order_func(Publication.created_at))
+        query = query.order_by(order_func(getattr(ResearchProject, sort_by)))
         
         # Apply pagination
         publications = query.offset(skip).limit(limit).all()
@@ -95,7 +82,7 @@ async def create_publication(
 ):
     """Create a new publication (Admin only)"""
     try:
-        db_publication = Publication(**publication.model_dump(exclude_unset=True))
+        db_publication = Publication(**publication.model_dump(exclude_unset=True),created_by=current_admin.id)
         db.add(db_publication)
         db.commit()
         db.refresh(db_publication)

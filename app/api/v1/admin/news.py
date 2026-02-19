@@ -21,6 +21,7 @@ async def get_all_news(
     search: Optional[str] = None,
     category_id: Optional[int] = None,
     status: Optional[str] = None,
+    is_published: Optional[bool] = None,
     sort_by: str = Query("published_date", pattern="^(title|published_date|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
@@ -29,32 +30,21 @@ async def get_all_news(
     """Get all news articles with pagination and filters (Admin only)"""
     try:
         query = db.query(News)
-        
-        # Apply filters
+
         if search:
             query = query.filter(
                 or_(
                     News.title.ilike(f"%{search}%"),
+                    News.summary.ilike(f"%{search}%"),
                     News.content.ilike(f"%{search}%")
                 )
             )
-        
-        if category_id:
-            query = query.filter(News.category_id == category_id)
-        
-        if status:
-            query = query.filter(News.status == status)
-        
-        # Apply sorting
+
+        if is_published is not None:
+            query = query.filter(News.is_published == is_published)
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "title":
-            query = query.order_by(order_func(News.title))
-        elif sort_by == "published_date":
-            query = query.order_by(order_func(News.published_date))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(News.updated_at))
-        else:
-            query = query.order_by(order_func(News.created_at))
+        query = query.order_by(order_func(getattr(News, sort_by)))
         
         # Apply pagination
         news = query.offset(skip).limit(limit).all()
@@ -90,7 +80,7 @@ async def create_news(
 ):
     """Create a new news article (Admin only)"""
     try:
-        db_news = News(**news.model_dump(exclude_unset=True))
+        db_news = News(**news.model_dump(exclude_unset=True),created_by=current_admin.id)
         db.add(db_news)
         db.commit()
         db.refresh(db_news)

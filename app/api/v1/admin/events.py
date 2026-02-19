@@ -20,6 +20,7 @@ async def get_all_events(
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
     event_type: Optional[str] = None,
+    is_active: Optional[bool] = None,
     status: Optional[str] = None,
     sort_by: str = Query("event_date", pattern="^(title|event_date|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
@@ -29,8 +30,7 @@ async def get_all_events(
     """Get all events with pagination and filters (Admin only)"""
     try:
         query = db.query(Event)
-        
-        # Apply filters
+
         if search:
             query = query.filter(
                 or_(
@@ -39,23 +39,15 @@ async def get_all_events(
                     Event.location.ilike(f"%{search}%")
                 )
             )
-        
+
         if event_type:
             query = query.filter(Event.event_type == event_type)
-        
-        if status:
-            query = query.filter(Event.status == status)
-        
-        # Apply sorting
+
+        if is_active is not None:
+            query = query.filter(Event.is_active == is_active)
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "title":
-            query = query.order_by(order_func(Event.title))
-        elif sort_by == "event_date":
-            query = query.order_by(order_func(Event.event_date))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(Event.updated_at))
-        else:
-            query = query.order_by(order_func(Event.created_at))
+        query = query.order_by(order_func(getattr(Event, sort_by)))
         
         # Apply pagination
         events = query.offset(skip).limit(limit).all()
@@ -91,7 +83,7 @@ async def create_event(
 ):
     """Create a new event (Admin only)"""
     try:
-        db_event = Event(**event.model_dump(exclude_unset=True))
+        db_event = Event(**event.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_event)
         db.commit()
         db.refresh(db_event)
