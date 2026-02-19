@@ -19,7 +19,8 @@ async def get_all_advisory_members(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
-    expertise_area: Optional[str] = None,
+    # expertise_area: Optional[str] = None,
+    is_active: Optional[bool] = None,
     status: Optional[str] = None,
     sort_by: str = Query("created_at", pattern="^(name|position|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
@@ -29,33 +30,22 @@ async def get_all_advisory_members(
     """Get all advisory board members with pagination and filters (Admin only)"""
     try:
         query = db.query(AdvisoryBoardMember)
-        
-        # Apply filters
+
         if search:
             query = query.filter(
                 or_(
                     AdvisoryBoardMember.name.ilike(f"%{search}%"),
                     AdvisoryBoardMember.position.ilike(f"%{search}%"),
-                    AdvisoryBoardMember.bio.ilike(f"%{search}%")
+                    AdvisoryBoardMember.institution.ilike(f"%{search}%"),
+                    AdvisoryBoardMember.expertise.ilike(f"%{search}%")
                 )
             )
-        
-        if expertise_area:
-            query = query.filter(AdvisoryBoardMember.expertise_area == expertise_area)
-        
-        if status:
-            query = query.filter(AdvisoryBoardMember.status == status)
-        
-        # Apply sorting
+
+        if is_active is not None:
+            query = query.filter(AdvisoryBoardMember.is_active == is_active)
+
         order_func = desc if order == "desc" else asc
-        if sort_by == "name":
-            query = query.order_by(order_func(AdvisoryBoardMember.name))
-        elif sort_by == "position":
-            query = query.order_by(order_func(AdvisoryBoardMember.position))
-        elif sort_by == "updated_at":
-            query = query.order_by(order_func(AdvisoryBoardMember.updated_at))
-        else:
-            query = query.order_by(order_func(AdvisoryBoardMember.created_at))
+        query = query.order_by(order_func(getattr(AdvisoryBoardMember, sort_by)))
         
         # Apply pagination
         members = query.offset(skip).limit(limit).all()

@@ -1,168 +1,202 @@
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import List, Optional
-from datetime import datetime, date
+from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
-# -----------------------------------------------------------------------------
-# ENUMS (Match your database values)
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# ENUMS (Must Match Database Enums Exactly)
+# =========================================================
 
 class ProjectStatus(str, Enum):
     active = "active"
     completed = "completed"
-    suspended = "suspended"
-    on_going = "On going"  # For Figma
-    done = "Done"          # For Figma
+    paused = "paused"
+
 
 class EventType(str, Enum):
-    conference = "conference"
     workshop = "workshop"
     seminar = "seminar"
-    bootcamp = "bootcamp"
+    conference = "conference"
+    meeting = "meeting"
+
 
 class PaperType(str, Enum):
-    journal = "Journal"
-    workshop = "Workshop"
-    conference = "Conference"
-    thesis = "Thesis"
+    journal = "journal"
+    conference = "conference"
+    book = "book"
+    report = "report"
 
-# -----------------------------------------------------------------------------
-# CATEGORY SCHEMAS (NEW - for project filters)
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# CATEGORY
+# =========================================================
 
 class CategoryBase(BaseModel):
     name: str
+    description: Optional[str] = None
+
 
 class CategoryCreate(CategoryBase):
     pass
 
+
 class CategoryResponse(CategoryBase):
     id: int
-    
+    created_at: datetime
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
-# -----------------------------------------------------------------------------
-# TEAM MEMBER SCHEMAS
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# TEAM MEMBER
+# =========================================================
 
 class TeamMemberBase(BaseModel):
     name: str
     position: Optional[str] = None
     bio: Optional[str] = None
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     photo_url: Optional[str] = None
+
 
 class TeamMemberCreate(TeamMemberBase):
     is_active: bool = True
+
 
 class TeamMemberResponse(TeamMemberBase):
     id: int
     is_active: bool
     created_at: datetime
-    
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
-# -----------------------------------------------------------------------------
-# RESEARCH PROJECT SCHEMAS (UPDATED)
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# RESEARCH PROJECT
+# =========================================================
 
 class ResearchProjectBase(BaseModel):
     title: str
+    slug: str
     description: Optional[str] = None
-    image_url: Optional[str] = None      # NEW for Figma
-    is_featured: bool = False            # NEW for Figma
+    image_url: Optional[str] = None
+    is_featured: bool = False
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: str = "On going"             # Changed for Figma
+    status: ProjectStatus = ProjectStatus.active
     funding_source: Optional[str] = None
-    budget: Optional[int] = None
+    budget: Optional[Decimal] = None
+
 
 class ResearchProjectCreate(ResearchProjectBase):
-    contributor_ids: List[int] = []      # For many-to-many
-    category_ids: List[int] = []         # NEW for filters
+    contributor_ids: List[int] = []
+    category_ids: List[int] = []
+
 
 class ResearchProjectResponse(ResearchProjectBase):
     id: int
     created_at: datetime
+    updated_at: datetime
     contributors: List[TeamMemberResponse] = []
     categories: List[CategoryResponse] = []
-    
+
     model_config = ConfigDict(from_attributes=True)
 
-# -----------------------------------------------------------------------------
-# PUBLICATION SCHEMAS (UPDATED)
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# PUBLICATION
+# =========================================================
 
 class PublicationBase(BaseModel):
     title: str
+    slug: str
     abstract: Optional[str] = None
     journal: Optional[str] = None
     publication_date: Optional[datetime] = None
-    paper_type: str = "Journal"          # NEW for Figma badges
-    pdf_url: Optional[str] = None        # NEW for Download button
-    online_url: Optional[str] = None     # NEW for View Online button
+    paper_type: PaperType
+    pdf_url: Optional[str] = None
+    online_url: Optional[str] = None
     doi: Optional[str] = None
     url: Optional[str] = None
     is_published: bool = True
 
+
 class PublicationCreate(PublicationBase):
-    author_ids: List[int] = []           # For many-to-many
-    project_id: Optional[int] = None
+    author_ids: List[int] = []
+    project_id: int
+
 
 class PublicationResponse(PublicationBase):
     id: int
     created_at: datetime
+    updated_at: datetime
     authors: List[TeamMemberResponse] = []
-    project_id: Optional[int] = None
-    
+    project_id: int
+
     model_config = ConfigDict(from_attributes=True)
 
-# -----------------------------------------------------------------------------
-# EVENT SCHEMAS (UPDATED)
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# EVENT
+# =========================================================
 
 class EventBase(BaseModel):
     title: str
+    slug: str
     description: Optional[str] = None
-    image_url: Optional[str] = None      # NEW for Figma
+    image_url: Optional[str] = None
     start_datetime: datetime
     end_datetime: Optional[datetime] = None
     location: Optional[str] = None
-    event_type: str = "workshop"
+    event_type: EventType
     is_active: bool = True
+
 
 class EventCreate(EventBase):
     pass
 
+
 class EventResponse(EventBase):
     id: int
     created_at: datetime
-    
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
-# -----------------------------------------------------------------------------
-# NEWS SCHEMAS (UPDATED)
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# NEWS
+# =========================================================
 
 class NewsBase(BaseModel):
     title: str
+    slug: str
+    summary: Optional[str] = None
     content: str
-    image_url: Optional[str] = None      # NEW for Figma
+    image_url: Optional[str] = None
     is_published: bool = True
 
+
 class NewsCreate(NewsBase):
-    created_by: Optional[int] = None     # User ID (admin)
+    pass
+
 
 class NewsResponse(NewsBase):
     id: int
     published_date: datetime
-    created_by: Optional[int] = None
-    
+    created_at: datetime
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
-# -----------------------------------------------------------------------------
-# ADVISORY BOARD SCHEMAS
-# -----------------------------------------------------------------------------
+
+# =========================================================
+# ADVISORY BOARD
+# =========================================================
 
 class AdvisoryBoardMemberBase(BaseModel):
     name: str
@@ -173,22 +207,14 @@ class AdvisoryBoardMemberBase(BaseModel):
     photo_url: Optional[str] = None
     is_active: bool = True
 
+
 class AdvisoryBoardMemberCreate(AdvisoryBoardMemberBase):
     pass
 
+
 class AdvisoryBoardMemberResponse(AdvisoryBoardMemberBase):
     id: int
-    
+    created_at: datetime
+    updated_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
-
-# -----------------------------------------------------------------------------
-# ALIASES FOR BACKWARD COMPATIBILITY
-# -----------------------------------------------------------------------------
-
-ResearchProject = ResearchProjectResponse
-Publication = PublicationResponse
-Event = EventResponse
-News = NewsResponse
-TeamMember = TeamMemberResponse
-AdvisoryBoardMember = AdvisoryBoardMemberResponse
-Category = CategoryResponse
