@@ -2,7 +2,9 @@
   {
     "email": "admin@gmail.com",
     "username": "admin",
-    "password": "12345678",
+    "password": "11119999", 
+    "role": "superadmin",
     "is_active": true
   }
 ]
+

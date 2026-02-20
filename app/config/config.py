@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
+    
+    # metadata uploads
+    upload_dir: str = Field(default="uploads", env="UPLOAD_DIR")
     class Config:
         env_file = ".env"
         case_sensitive = False

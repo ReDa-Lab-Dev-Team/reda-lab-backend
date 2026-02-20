@@ -17,6 +17,9 @@ class AdminBase(BaseModel):
 # Schema for creating an admin
 class AdminCreate(AdminBase):
     password: str
+    
+class AdminUploadAvatar(BaseModel):
+    avatar: str
 
 # Schema for admin login
 class AdminLogin:
@@ -32,6 +35,7 @@ class AdminLogin:
 class AdminResponse(AdminBase):
     id: int
     is_active: bool
+    role: str
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
@@ -41,6 +45,7 @@ User = AdminResponse
 UserCreate = AdminCreate
 UserLogin = AdminLogin
 UserResponse = AdminResponse
+UserUploadAvatar = AdminUploadAvatar
 
 # Token schemas
 class Token(BaseModel):

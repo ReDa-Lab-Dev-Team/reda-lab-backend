@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import auth
+from app.api.v1 import login
 from app.api.v1.admin import router as admin_router
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+from app.config.config import settings
+import os
 # from app.config.database import engine, Base
 
 # Create all tables
@@ -20,10 +24,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+os.makedirs(settings.upload_dir, exist_ok=True)
+
 # Include routers
-app.include_router(auth.router)
+app.include_router(login.router)
 app.include_router(prefix="/api/v1", router=admin_router)
 # app.include_router(public.router)
+
+
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 @app.get("/")
 def read_root():

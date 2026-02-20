@@ -6,6 +6,7 @@ from .team_members import router as team_members_router
 from .news import router as news_router
 from .advisory_board import router as advisory_board_router
 from .categories import router as categories_router
+from .users import router as user_router
 
 router = APIRouter(prefix="/admin", tags=["Admin Panel"])
 
@@ -17,3 +18,4 @@ router.include_router(team_members_router)
 router.include_router(news_router)
 router.include_router(advisory_board_router)
 router.include_router(categories_router)
+router.include_router(user_router)

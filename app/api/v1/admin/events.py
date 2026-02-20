@@ -1,5 +1,6 @@
+import os
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
@@ -9,6 +10,11 @@ from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
 from app.schemas.lab_entities import EventCreate, EventResponse
 from app.models.lab_entities import Event
+import shutil
+
+from datetime import datetime
+
+from app.config.config import settings
 
 router = APIRouter(prefix="/events", tags=["Admin - Events"])
 
@@ -83,6 +89,9 @@ async def create_event(
 ):
     """Create a new event (Admin only)"""
     try:
+        
+        
+        
         db_event = Event(**event.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_event)
         db.commit()
@@ -164,3 +173,18 @@ async def delete_event(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Failed to delete event"
         )
+        
+@router.put('/uploads/{event_id}')
+async def upload_event_image(
+    event_id: int,
+    file: UploadFile,
+    db: Session = Depends(get_db),  
+):
+      
+    file_location = os.path.join(settings.upload_dir, 'events', file.filename)
+    
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    return {"location": file_location, "content_type": file.content_type}
+    
