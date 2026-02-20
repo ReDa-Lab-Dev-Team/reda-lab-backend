@@ -19,3 +19,6 @@ dist/
 *.postman_collection.json
 
 docker-compose.yml
+
+upload/
+seeds/
