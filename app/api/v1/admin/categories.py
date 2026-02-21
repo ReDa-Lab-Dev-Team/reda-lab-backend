@@ -10,7 +10,8 @@ from app.models.admin import Admin
 from app.schemas.lab_entities import CategoryCreate, CategoryResponse
 from app.models.lab_entities import Category
 
-router = APIRouter(prefix="/categories", tags=["Admin - Categories"])
+router = APIRouter(prefix="/categories",
+                    tags=["Admin - Categories"])
 
 # ========== READ OPERATIONS ==========
 
@@ -23,8 +24,8 @@ async def get_all_categories(
     status: Optional[str] = None,
     sort_by: str = Query("name", pattern="^(name|created_at|updated_at)$"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+    db: Session = Depends(get_db)
+    # current_admin: Admin = Depends(get_current_user) # no need to authenticate for categories
 ):
     """Get all categories with pagination and filters (Admin only)"""
     try:

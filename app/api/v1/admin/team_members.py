@@ -19,14 +19,11 @@ async def get_all_team_members(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
-    role: Optional[str] = None,
-    department: Optional[str] = None,
-    status: Optional[str] = None,
     is_active: Optional[bool] = None,
     sort_by: str = Query("created_at", pattern="^(name|position|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+    current_admin: Admin = Depends(get_current_user) 
 ):
     """Get all team members with pagination and filters (Admin only)"""
     try:
@@ -56,8 +53,41 @@ async def get_all_team_members(
             detail="Failed to retrieve team members"
         )
 
+@router.get("/position/{position}", response_model=List[TeamMemberResponse])
+async def get_team_members_by_position(
+    position: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    is_active: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_user)
+):
+    """Get team members by position/role (Admin only)"""
+    try:
+        query = db.query(TeamMember).filter(TeamMember.position.ilike(f"%{position}%"))
+        
+        if is_active is not None:
+            query = query.filter(TeamMember.is_active == is_active)
+        
+        members = query.offset(skip).limit(limit).all()
+        
+        if not members:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No team members found with position containing '{position}'"
+            )
+        
+        return members
+    except HTTPException:
+        raise
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve team members by position"
+        )
+
 @router.get("/{member_id}", response_model=TeamMemberResponse)
-async def get_team_member(
+async def get_team_member_id(
     member_id: int,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
@@ -155,7 +185,6 @@ async def delete_team_member(
     try:
         db.delete(db_member)
         db.commit()
-        return {"message": "Team member deleted successfully"}
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(
