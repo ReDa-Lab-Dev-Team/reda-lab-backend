@@ -138,7 +138,7 @@ async def update_team_member(
 
 # ========== DELETE OPERATION ==========
 
-@router.delete("/{member_id}", status_code=status.HTTP_200_OK)
+@router.delete("/delete/{member_id}", status_code=status.HTTP_200_OK)
 async def delete_team_member(
     member_id: int,
     db: Session = Depends(get_db),

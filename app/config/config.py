@@ -1,10 +1,5 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from pydantic_settings import BaseSettings
 from pydantic import Field
-import os
-from dotenv import load_dotenv
 
 
 
@@ -19,7 +14,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     
     # metadata uploads
-    upload_dir: str = Field(default="uploads", env="UPLOAD_DIR")
+    upload_dir: str = Field(default="upload", env="UPLOAD_DIR")
     class Config:
         env_file = ".env"
         case_sensitive = False

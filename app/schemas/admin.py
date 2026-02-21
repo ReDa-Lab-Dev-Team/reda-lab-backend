@@ -39,6 +39,11 @@ class AdminResponse(AdminBase):
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
+    
+class AdminUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
 
 # Aliases for backward compatibility
 User = AdminResponse

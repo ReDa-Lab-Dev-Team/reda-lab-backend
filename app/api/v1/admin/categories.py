@@ -47,7 +47,7 @@ async def get_all_categories(
     except SQLAlchemyError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve categories"
+            detail={"msg": "Failed to retrieve categories"}
         )
 
 @router.get("/{category_id}", response_model=CategoryResponse)
@@ -61,37 +61,12 @@ async def get_category(
     if not db_category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Category with id {category_id} not found"
+            detail={"msg": f"Category with id {category_id} not found"}
         )
     return db_category
 
 # ========== CREATE OPERATION ==========
 
-# @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
-# async def create_category(
-#     category: CategoryCreate,
-#     db: Session = Depends(get_db),
-#     current_admin: Admin = Depends(get_current_user)
-# ):
-#     """Create a new category (Admin only)"""
-#     try:
-#         db_category = Category(**category.model_dump(exclude_unset=True))
-#         db.add(db_category)
-#         db.commit()
-#         db.refresh(db_category)
-#         return db_category
-#     except IntegrityError:
-#         db.rollback()
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST, 
-#             detail="Category already exists or violates unique constraint"
-#         )
-#     except SQLAlchemyError:
-#         db.rollback()
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-#             detail="Database error occurred"
-#         )
 
 @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(

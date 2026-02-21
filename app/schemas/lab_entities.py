@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr,field_validator
 from typing import List, Optional
 from datetime import datetime
 from enum import Enum
@@ -59,11 +59,18 @@ class TeamMemberBase(BaseModel):
     position: Optional[str] = None
     bio: Optional[str] = None
     email: Optional[EmailStr] = None
-    photo_url: Optional[str] = None
+    @field_validator('email')
+    @classmethod
+    def validate_email_domain(cls, v):
+        if not v.endswith('@gmail.com'):
+            raise ValueError('Email must be from @gmail.com domain')
+        return v
+
 
 
 class TeamMemberCreate(TeamMemberBase):
     is_active: bool = True
+    photo_url: Optional[str] = None
 
 
 class TeamMemberResponse(TeamMemberBase):
