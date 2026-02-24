@@ -4,8 +4,10 @@ from .lab_entities import (
     CategoryCreate, CategoryResponse,
     # Projects
     ResearchProjectCreate, ResearchProjectResponse,
-    # Publications
-    PublicationCreate, PublicationResponse,
+    # Research Clubs
+    ResearchClubCreate, ResearchClubResponse,
+    # Research Papers
+    ResearchPaperCreate, ResearchPaperResponse,
     # Events
     EventCreate, EventResponse,
     # News
@@ -24,7 +26,8 @@ __all__ = [
     # Lab entities
     "CategoryCreate", "CategoryResponse",
     "ResearchProjectCreate", "ResearchProjectResponse",
-    "PublicationCreate", "PublicationResponse",
+    "ResearchClubCreate", "ResearchClubResponse",
+    "ResearchPaperCreate", "ResearchPaperResponse",
     "EventCreate", "EventResponse",
     "NewsCreate", "NewsResponse",
     "TeamMemberCreate", "TeamMemberResponse",

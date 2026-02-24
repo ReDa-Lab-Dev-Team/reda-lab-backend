@@ -17,6 +17,7 @@ import enum
 class ProjectStatus(enum.Enum):
     active = "active"
     completed = "completed"
+    upcoming = "upcoming"
     paused = "paused"
 
 
@@ -28,10 +29,14 @@ class EventType(enum.Enum):
 
 
 class PaperType(enum.Enum):
-    journal = "journal"
-    conference = "conference"
-    book = "book"
-    report = "report"
+    journal = "journal"              # Journal article
+    conference = "conference"        # Conference paper/proceedings
+    workshop = "workshop"            # Workshop paper (as shown in your Figma)
+    book_chapter = "book_chapter"    # Book chapter
+    thesis = "thesis"                # PhD/Master's thesis
+    technical_report = "technical_report"  # Technical report
+    preprint = "preprint"            # arXiv, bioRxiv, etc.
+    poster = "poster"                # Conference poster
 
 
 # =========================================================
@@ -55,22 +60,39 @@ project_contributors = Table(
     ),
 )
 
-publication_authors = Table(
-    "publication_authors",
-    Base.metadata,
-    Column(
-        "publication_id",
-        Integer,
-        ForeignKey("publications.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "member_id",
-        Integer,
-        ForeignKey("team_members.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-)
+# research_paper_authors = Table(
+#     "research_paper_authors",
+#     Base.metadata,
+#     Column(
+#         "paper_id",
+#         Integer,
+#         ForeignKey("research_papers.id", ondelete="CASCADE"),
+#         primary_key=True,
+#     ),
+#     Column(
+#         "member_id",
+#         Integer,
+#         ForeignKey("team_members.id", ondelete="CASCADE"),
+#         primary_key=True,
+#     ),
+# )
+
+# research_club_leaders = Table(
+#     "research_club_leaders",
+#     Base.metadata,
+#     Column(
+#         "club_id",
+#         Integer,
+#         ForeignKey("research_clubs.id", ondelete="CASCADE"),
+#         primary_key=True,
+#     ),
+#     Column(
+#         "member_id",
+#         Integer,
+#         ForeignKey("team_members.id", ondelete="CASCADE"),
+#         primary_key=True,
+#     ),
+# )
 
 project_categories = Table(
     "project_categories",
@@ -177,13 +199,7 @@ class ResearchProject(Base, TimestampMixin):
         secondary=project_contributors,
         back_populates="projects",
     )
-
-    publications = relationship(
-        "Publication",
-        back_populates="project",
-        cascade="all, delete",
-    )
-
+    
     categories = relationship(
         "Category",
         secondary=project_categories,
@@ -192,11 +208,89 @@ class ResearchProject(Base, TimestampMixin):
 
 
 # =========================================================
-# PUBLICATION
+# RESEARCH CLUB
 # =========================================================
 
-class Publication(Base, TimestampMixin):
-    __tablename__ = "publications"
+class ResearchClub(Base, TimestampMixin):
+    __tablename__ = "research_clubs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    name = Column(String(200), nullable=False)
+    slug = Column(String(255), unique=True, nullable=False, index=True)
+
+    description = Column(Text)
+    core_theme = Column(String(300))
+    leaders = Column(String(500))
+    image_url = Column(String(255))
+
+    is_active = Column(Boolean, default=True, index=True)
+
+    created_by = Column(
+        Integer,
+        ForeignKey("admins.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+
+# =========================================================
+# RESEARCH PAPER
+# =========================================================
+
+# class ResearchPaper(Base, TimestampMixin):
+#     __tablename__ = "research_papers"
+
+#     id = Column(Integer, primary_key=True, index=True)
+
+#     title = Column(String(300), nullable=False)
+#     slug = Column(String(255), unique=True, nullable=False, index=True)
+
+#     title = Column(Text)
+#     description = Column(Text)
+
+#     published_date = Column(DateTime, index=True)
+
+#     paper_type = Column(
+#         Enum(PaperType),
+#         nullable=False,
+#         index=True,
+#     )
+
+#     pdf_url = Column(String(255))
+#     online_url = Column(String(255))
+#     url = Column(String(255))
+
+#     is_published = Column(Boolean, default=True, index=True)
+
+#     club_id = Column(
+#         Integer,
+#         ForeignKey("research_clubs.id", ondelete="CASCADE"),
+#         nullable=True,
+#     )
+
+#     project_id = Column(
+#         Integer,
+#         ForeignKey("research_projects.id", ondelete="CASCADE"),
+#         nullable=True,
+#     )
+
+#     created_by = Column(
+#         Integer,
+#         ForeignKey("admins.id", ondelete="CASCADE"),
+#         nullable=False,
+#     )
+
+#     club = relationship("ResearchClub", back_populates="research_papers")
+#     project = relationship("ResearchProject", back_populates="research_papers")
+
+#     authors = relationship(
+#         "TeamMember",
+#         secondary=research_paper_authors,
+#         back_populates="research_papers",
+#     )
+
+class ResearchPaper(Base, TimestampMixin):
+    __tablename__ = "research_papers"
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -204,9 +298,9 @@ class Publication(Base, TimestampMixin):
     slug = Column(String(255), unique=True, nullable=False, index=True)
 
     abstract = Column(Text)
-    journal = Column(String(200))
+    authors = Column(String(500))  # Simple text field for author names
 
-    publication_date = Column(DateTime, index=True)
+    published_date = Column(DateTime, index=True)
 
     paper_type = Column(
         Enum(PaperType),
@@ -216,31 +310,14 @@ class Publication(Base, TimestampMixin):
 
     pdf_url = Column(String(255))
     online_url = Column(String(255))
-    doi = Column(String(100))
-    url = Column(String(255))
 
     is_published = Column(Boolean, default=True, index=True)
-
-    project_id = Column(
-        Integer,
-        ForeignKey("research_projects.id", ondelete="CASCADE"),
-        nullable=False,
-    )
 
     created_by = Column(
         Integer,
         ForeignKey("admins.id", ondelete="CASCADE"),
         nullable=False,
     )
-
-    project = relationship("ResearchProject", back_populates="publications")
-
-    authors = relationship(
-        "TeamMember",
-        secondary=publication_authors,
-        back_populates="publications",
-    )
-
 
 # =========================================================
 # EVENT
@@ -335,12 +412,17 @@ class TeamMember(Base, TimestampMixin):
         back_populates="contributors",
     )
 
-    publications = relationship(
-        "Publication",
-        secondary=publication_authors,
-        back_populates="authors",
-    )
+    # research_papers = relationship(
+    #     "ResearchPaper",
+    #     secondary=research_paper_authors,
+    #     back_populates="authors",
+    # )
 
+    # led_clubs = relationship(
+    #     "ResearchClub",
+    #     secondary=research_club_leaders,
+    #     back_populates="leaders",
+    # )
 
 # =========================================================
 # ADVISORY BOARD

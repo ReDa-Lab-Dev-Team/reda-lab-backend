@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from .projects import router as projects_router
-from .publications import router as publications_router
 from .events import router as events_router
 from .team_members import router as team_members_router
 from .news import router as news_router
@@ -12,7 +11,6 @@ router = APIRouter(prefix="/admin", tags=["Admin Panel"])
 
 # Include all sub-routers
 router.include_router(projects_router)
-router.include_router(publications_router)
 router.include_router(events_router)
 router.include_router(team_members_router)
 router.include_router(news_router)

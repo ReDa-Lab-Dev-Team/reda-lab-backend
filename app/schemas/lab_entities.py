@@ -12,6 +12,7 @@ from decimal import Decimal
 class ProjectStatus(str, Enum):
     active = "active"
     completed = "completed"
+    upcoming = "upcoming"
     paused = "paused"
 
 
@@ -25,9 +26,12 @@ class EventType(str, Enum):
 class PaperType(str, Enum):
     journal = "journal"
     conference = "conference"
-    book = "book"
-    report = "report"
-
+    workshop = "workshop"
+    book_chapter = "book_chapter"
+    thesis = "thesis"
+    technical_report = "technical_report"
+    preprint = "preprint"
+    poster = "poster"
 
 # =========================================================
 # CATEGORY
@@ -44,8 +48,8 @@ class CategoryCreate(CategoryBase):
 
 class CategoryResponse(CategoryBase):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    # created_at: datetime
+    # updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -76,8 +80,9 @@ class TeamMemberCreate(TeamMemberBase):
 class TeamMemberResponse(TeamMemberBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    # created_at: datetime
+    # updated_at: datetime
+    photo_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -88,7 +93,7 @@ class TeamMemberResponse(TeamMemberBase):
 
 class ResearchProjectBase(BaseModel):
     title: str
-    slug: str
+    slug: Optional[str] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
     is_featured: bool = False
@@ -108,44 +113,63 @@ class ResearchProjectResponse(ResearchProjectBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    contributors: List[TeamMemberResponse] = []
+    contributors : List[TeamMemberResponse] = []
     categories: List[CategoryResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
 
 # =========================================================
-# PUBLICATION
+# RESEARCH CLUB
 # =========================================================
 
-class PublicationBase(BaseModel):
-    title: str
-    slug: str
-    abstract: Optional[str] = None
-    journal: Optional[str] = None
-    publication_date: Optional[datetime] = None
-    paper_type: PaperType
-    pdf_url: Optional[str] = None
-    online_url: Optional[str] = None
-    doi: Optional[str] = None
-    url: Optional[str] = None
-    is_published: bool = True
+class ResearchClubBase(BaseModel):
+    name: str
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    core_theme: Optional[str] = None
+    leaders: Optional[str] = None
+    image_url: Optional[str] = None
+    is_active: bool = True
 
 
-class PublicationCreate(PublicationBase):
-    author_ids: List[int] = []
-    project_id: int
+class ResearchClubCreate(ResearchClubBase):
+    pass
 
 
-class PublicationResponse(PublicationBase):
+class ResearchClubResponse(ResearchClubBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    authors: List[TeamMemberResponse] = []
-    project_id: int
 
     model_config = ConfigDict(from_attributes=True)
 
+# =========================================================
+# RESEARCH PAPER
+# =========================================================
+
+class ResearchPaperBase(BaseModel):
+    title: str
+    slug: Optional[str] = None
+    abstract: Optional[str] = None
+    authors: Optional[str] = None  # Simple text field for author names
+    published_date: Optional[datetime] = None
+    paper_type: PaperType
+    pdf_url: Optional[str] = None
+    online_url: Optional[str] = None
+    is_published: bool = True
+
+
+class ResearchPaperCreate(ResearchPaperBase):
+    pass
+
+
+class ResearchPaperResponse(ResearchPaperBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 # =========================================================
 # EVENT
