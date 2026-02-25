@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 from typing import Optional
 from datetime import datetime
-from fastapi import Form
+from fastapi import Depends, Form
 
 # Base schema for admin
 class AdminBase(BaseModel):
@@ -37,6 +37,7 @@ class AdminResponse(AdminBase):
     is_active: bool
     role: str
     created_at: datetime
+    avatar: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -46,11 +47,11 @@ class AdminUpdate(BaseModel):
     password: Optional[str] = None
 
 # Aliases for backward compatibility
-User = AdminResponse
-UserCreate = AdminCreate
-UserLogin = AdminLogin
-UserResponse = AdminResponse
-UserUploadAvatar = AdminUploadAvatar
+# User = AdminResponse
+# UserCreate = AdminCreate
+# UserLogin = AdminLogin
+# UserResponse = AdminResponse
+# UserUploadAvatar = AdminUploadAvatar
 
 # Token schemas
 class Token(BaseModel):

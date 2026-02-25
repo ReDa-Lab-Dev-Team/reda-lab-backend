@@ -1,19 +1,17 @@
-import os
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
+import os
+import shutil
+from datetime import datetime
 
 from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
-from app.schemas.lab_entities import EventCreate, EventResponse
-from app.models.lab_entities import Event
-import shutil
-
-from datetime import datetime
-
+from app.schemas.lab_entities import EventCreate, EventResponse, EventUpdate
+from app.models.lab_entities import Event, EventType
 from app.config.config import settings
 
 router = APIRouter(prefix="/events", tags=["Admin - Events"])
@@ -25,10 +23,9 @@ async def get_all_events(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
-    event_type: Optional[str] = None,
+    event_type: Optional[EventType] = None,
     is_active: Optional[bool] = None,
-    status: Optional[str] = None,
-    sort_by: str = Query("event_date", pattern="^(title|event_date|created_at|updated_at)$"),
+    sort_by: str = Query("start_datetime", pattern="^(title|start_datetime|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
@@ -89,9 +86,6 @@ async def create_event(
 ):
     """Create a new event (Admin only)"""
     try:
-        
-        
-        
         db_event = Event(**event.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_event)
         db.commit()
@@ -115,7 +109,7 @@ async def create_event(
 @router.put("/{event_id}", response_model=EventResponse)
 async def update_event(
     event_id: int,
-    event: EventCreate,
+    event: EventUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):
@@ -164,6 +158,10 @@ async def delete_event(
         )
     
     try:
+        # Delete associated image if exists
+        if db_event.image_url and os.path.exists(db_event.image_url):
+            os.remove(db_event.image_url)
+        
         db.delete(db_event)
         db.commit()
         return {"message": "Event deleted successfully"}
@@ -173,18 +171,56 @@ async def delete_event(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Failed to delete event"
         )
-        
-@router.put('/uploads/{event_id}')
+
+# ========== FILE UPLOAD ==========
+
+@router.post("/{event_id}/upload-image")
 async def upload_event_image(
     event_id: int,
-    file: UploadFile,
-    db: Session = Depends(get_db),  
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_user)
 ):
-      
-    file_location = os.path.join(settings.upload_dir, 'events', file.filename)
+    """Upload event image (Admin only)"""
+    db_event = db.query(Event).filter(Event.id == event_id).first()
+    if not db_event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id {event_id} not found"
+        )
     
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    return {"location": file_location, "content_type": file.content_type}
-    
+    try:
+        # Create directory if not exists
+        upload_dir = os.path.join(settings.upload_dir, 'events')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_extension = os.path.splitext(file.filename)[1]
+        filename = f"event_{event_id}_{timestamp}{file_extension}"
+        file_location = os.path.join(upload_dir, filename)
+        
+        # Delete old image if exists
+        if db_event.image_url and os.path.exists(db_event.image_url):
+            os.remove(db_event.image_url)
+        
+        # Save new file
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Update database
+        db_event.image_url = file_location
+        db.commit()
+        db.refresh(db_event)
+        
+        return {
+            "message": "Image uploaded successfully",
+            "location": file_location,
+            "content_type": file.content_type
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload image: {str(e)}"
+        )

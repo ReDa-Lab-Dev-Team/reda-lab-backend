@@ -205,6 +205,9 @@ class ResearchProject(Base, TimestampMixin):
         secondary=project_categories,
         back_populates="projects",
     )
+    
+    # def __repr__(self):
+    #     return f"<ResearchProject(id={self.id}, title='{self.title}', status='{self.status.value}')>"
 
 
 # =========================================================

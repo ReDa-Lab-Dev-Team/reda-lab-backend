@@ -2,17 +2,48 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy import or_, desc, asc
+from sqlalchemy import or_, desc, asc, func
 
 from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
-from app.schemas.lab_entities import TeamMemberCreate, TeamMemberResponse
+from app.schemas.lab_entities import TeamMemberCreate, TeamMemberResponse, TeamMemberUpdate
 from app.models.lab_entities import TeamMember
 
 router = APIRouter(prefix="/team-members", tags=["Admin - Team Members"])
 
 # ========== READ OPERATIONS ==========
+
+@router.get("/count", response_model=Dict[str, int])
+async def count_team_members(
+    is_active: Optional[bool] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_user)
+):
+    """Count total team members with optional filters (Admin only)"""
+    try:
+        query = db.query(func.count(TeamMember.id))
+        
+        if is_active is not None:
+            query = query.filter(TeamMember.is_active == is_active)
+        
+        if search:
+            query = query.filter(
+                or_(
+                    TeamMember.name.ilike(f"%{search}%"),
+                    TeamMember.position.ilike(f"%{search}%"),
+                    TeamMember.bio.ilike(f"%{search}%")
+                )
+            )
+        
+        total = query.scalar()
+        return {"total": total}
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to count team members"
+        )
 
 @router.get("", response_model=List[TeamMemberResponse])
 async def get_all_team_members(
@@ -134,7 +165,7 @@ async def create_team_member(
 @router.put("/{member_id}", response_model=TeamMemberResponse)
 async def update_team_member(
     member_id: int,
-    member: TeamMemberCreate,
+    member: TeamMemberUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):

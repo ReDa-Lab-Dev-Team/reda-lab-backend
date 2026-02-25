@@ -7,7 +7,7 @@ from sqlalchemy import or_, desc, asc
 from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
-from app.schemas.lab_entities import CategoryCreate, CategoryResponse
+from app.schemas.lab_entities import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.models.lab_entities import Category
 
 router = APIRouter(prefix="/categories",
@@ -104,7 +104,7 @@ async def create_category(
 @router.put("/{category_id}", response_model=CategoryResponse)
 async def update_category(
     category_id: int,
-    category: CategoryCreate,
+    category: CategoryUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):

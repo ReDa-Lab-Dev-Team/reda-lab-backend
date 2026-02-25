@@ -7,7 +7,7 @@ from app.utils.helper_functions import slugify
 from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
-from app.schemas.lab_entities import ResearchProjectCreate, ResearchProjectResponse, ProjectStatus
+from app.schemas.lab_entities import ResearchProjectCreate, ResearchProjectResponse, ProjectStatus, ResearchProjectUpdate
 from app.models.lab_entities import ResearchProject, Category, TeamMember
 
 router = APIRouter(prefix="/projects", tags=["Admin - Research Projects"])
@@ -50,6 +50,8 @@ async def get_all_projects(
         
         # Apply pagination
         projects = query.offset(skip).limit(limit).all()
+        
+        print("Project: ", projects[0])
         return projects
         
     except SQLAlchemyError as e:
@@ -62,7 +64,8 @@ async def get_all_projects(
 @router.get("/{project_id}", response_model=ResearchProjectResponse)
 async def get_project(
     project_id: int,
-    db: Session = Depends(get_db)#,current_admin: Admin = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_user)
 ):
     """Get a single research project by ID (Admin only)"""
     db_project = db.query(ResearchProject).filter(
@@ -167,7 +170,7 @@ async def create_project(
 @router.put("/{project_id}", response_model=ResearchProjectResponse)
 async def update_project(
     project_id: int,
-    project: ResearchProjectCreate,
+    project: ResearchProjectUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):
@@ -213,37 +216,43 @@ async def update_project(
         # Update basic fields
         for key, value in project_data.items():
             setattr(db_project, key, value)
-        
-        # Update relationships if provided
+        # Update relationships ONLY if explicitly provided
         if contributor_ids is not None:
-            contributors = db.query(TeamMember).filter(
-                TeamMember.id.in_(contributor_ids),
-                TeamMember.is_deleted == False
-            ).all()
-            
-            if len(contributors) != len(contributor_ids):
-                raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
-                    detail="One or more contributor IDs are invalid"
-                )
-            db_project.contributors = contributors
+            if len(contributor_ids) > 0:
+                contributors = db.query(TeamMember).filter(
+                    TeamMember.id.in_(contributor_ids),
+                    TeamMember.is_deleted == False
+                ).all()
+                
+                if len(contributors) != len(contributor_ids):
+                    raise HTTPException(
+                        status_code=http_status.HTTP_400_BAD_REQUEST,
+                        detail="One or more contributor IDs are invalid"
+                    )
+                db_project.contributors = contributors
+            else:
+                # Empty list means clear all contributors
+                db_project.contributors = []
         
         if category_ids is not None:
-            categories = db.query(Category).filter(
-                Category.id.in_(category_ids),
-                Category.is_deleted == False
-            ).all()
-            
-            if len(categories) != len(category_ids):
-                raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
-                    detail="One or more category IDs are invalid"
-                )
-            db_project.categories = categories
+            if len(category_ids) > 0:
+                categories = db.query(Category).filter(
+                    Category.id.in_(category_ids),
+                    Category.is_deleted == False
+                ).all()
+                
+                if len(categories) != len(category_ids):
+                    raise HTTPException(
+                        status_code=http_status.HTTP_400_BAD_REQUEST,
+                        detail="One or more category IDs are invalid"
+                    )
+                db_project.categories = categories
+            else:
+                # Empty list means clear all categories
+                db_project.categories = []
         
         db.commit()
         db.refresh(db_project)
-        
         return db_project
         
     except IntegrityError as e:

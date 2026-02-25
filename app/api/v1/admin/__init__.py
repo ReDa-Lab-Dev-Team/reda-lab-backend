@@ -5,7 +5,9 @@ from .team_members import router as team_members_router
 from .news import router as news_router
 from .advisory_board import router as advisory_board_router
 from .categories import router as categories_router
-from .users import public_router as user_public_router, protected_router as user_protected_router
+from .research_paper import router as research_papers_router
+from .research_club import router as research_clubs_router
+from .users import router as users_router
 
 router = APIRouter(prefix="/admin", tags=["Admin Panel"])
 
@@ -16,5 +18,6 @@ router.include_router(team_members_router)
 router.include_router(news_router)
 router.include_router(advisory_board_router)
 router.include_router(categories_router)
-router.include_router(user_public_router)
-router.include_router(user_protected_router)
+router.include_router(research_papers_router)
+router.include_router(research_clubs_router)
+router.include_router(users_router)

@@ -7,7 +7,7 @@ from sqlalchemy import or_, desc, asc
 from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
-from app.schemas.lab_entities import AdvisoryBoardMemberCreate, AdvisoryBoardMemberResponse
+from app.schemas.lab_entities import AdvisoryBoardMemberCreate, AdvisoryBoardMemberResponse, AdvisoryBoardMemberUpdate
 from app.models.lab_entities import AdvisoryBoardMember
 
 router = APIRouter(prefix="/advisory-board", tags=["Admin - Advisory Board"])
@@ -19,10 +19,8 @@ async def get_all_advisory_members(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
-    # expertise_area: Optional[str] = None,
     is_active: Optional[bool] = None,
-    status: Optional[str] = None,
-    sort_by: str = Query("created_at", pattern="^(name|position|created_at|updated_at)$"),
+    sort_by: str = Query("created_at", pattern="^(name|position|institution|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
@@ -37,7 +35,8 @@ async def get_all_advisory_members(
                     AdvisoryBoardMember.name.ilike(f"%{search}%"),
                     AdvisoryBoardMember.position.ilike(f"%{search}%"),
                     AdvisoryBoardMember.institution.ilike(f"%{search}%"),
-                    AdvisoryBoardMember.expertise.ilike(f"%{search}%")
+                    AdvisoryBoardMember.expertise.ilike(f"%{search}%"),
+                    AdvisoryBoardMember.bio.ilike(f"%{search}%")
                 )
             )
 
@@ -81,7 +80,7 @@ async def create_advisory_member(
 ):
     """Create a new advisory board member (Admin only)"""
     try:
-        db_member = AdvisoryBoardMember(**member.model_dump(exclude_unset=True),created_by=current_admin.id)
+        db_member = AdvisoryBoardMember(**member.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_member)
         db.commit()
         db.refresh(db_member)
@@ -104,7 +103,7 @@ async def create_advisory_member(
 @router.put("/{member_id}", response_model=AdvisoryBoardMemberResponse)
 async def update_advisory_member(
     member_id: int,
-    member: AdvisoryBoardMemberCreate,
+    member: AdvisoryBoardMemberUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):

@@ -7,87 +7,91 @@ from sqlalchemy import or_, desc, asc
 from app.config.database import get_db
 from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
-from app.schemas.lab_entities import NewsCreate, NewsResponse, NewsUpdate
-from app.models.lab_entities import News
+from app.schemas.lab_entities import ResearchPaperCreate, ResearchPaperResponse, ResearchPaperUpdate
+from app.models.lab_entities import ResearchPaper, PaperType
 
-router = APIRouter(prefix="/news", tags=["Admin - News"])
+router = APIRouter(prefix="/research-papers", tags=["Admin - Research Papers"])
 
 # ========== READ OPERATIONS ==========
 
-@router.get("", response_model=List[NewsResponse])
-async def get_all_news(
+@router.get("", response_model=List[ResearchPaperResponse])
+async def get_all_research_papers(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
+    paper_type: Optional[PaperType] = None,
     is_published: Optional[bool] = None,
     sort_by: str = Query("published_date", pattern="^(title|published_date|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):
-    """Get all news articles with pagination and filters (Admin only)"""
+    """Get all research papers with pagination and filters (Admin only)"""
     try:
-        query = db.query(News)
+        query = db.query(ResearchPaper)
 
         if search:
             query = query.filter(
                 or_(
-                    News.title.ilike(f"%{search}%"),
-                    News.summary.ilike(f"%{search}%"),
-                    News.content.ilike(f"%{search}%")
+                    ResearchPaper.title.ilike(f"%{search}%"),
+                    ResearchPaper.abstract.ilike(f"%{search}%"),
+                    ResearchPaper.authors.ilike(f"%{search}%")
                 )
             )
 
+        if paper_type:
+            query = query.filter(ResearchPaper.paper_type == paper_type)
+
         if is_published is not None:
-            query = query.filter(News.is_published == is_published)
+            query = query.filter(ResearchPaper.is_published == is_published)
 
         order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(News, sort_by)))
+        query = query.order_by(order_func(getattr(ResearchPaper, sort_by)))
         
         # Apply pagination
-        news = query.offset(skip).limit(limit).all()
-        return news
+        papers = query.offset(skip).limit(limit).all()
+        return papers
     except SQLAlchemyError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve news"
+            detail="Failed to retrieve research papers"
         )
 
-@router.get("/{news_id}", response_model=NewsResponse)
-async def get_news(
-    news_id: int,
+@router.get("/{paper_id}", response_model=ResearchPaperResponse)
+async def get_research_paper(
+    paper_id: int,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):
-    """Get a single news article by ID (Admin only)"""
-    db_news = db.query(News).filter(News.id == news_id).first()
-    if not db_news:
+    """Get a single research paper by ID (Admin only)"""
+    db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
+    if not db_paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"News with id {news_id} not found"
+            detail=f"Research paper with id {paper_id} not found"
         )
-    return db_news
+    return db_paper
 
 # ========== CREATE OPERATION ==========
 
-@router.post("", response_model=NewsResponse, status_code=status.HTTP_201_CREATED)
-async def create_news(
-    news: NewsCreate,
+@router.post("", response_model=ResearchPaperResponse, status_code=status.HTTP_201_CREATED)
+async def create_research_paper(
+    paper: ResearchPaperCreate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):
-    """Create a new news article (Admin only)"""
+    """Create a new research paper (Admin only)"""
     try:
-        db_news = News(**news.model_dump(exclude_unset=True), created_by=current_admin.id)
-        db.add(db_news)
+        db_paper = ResearchPaper(**paper.model_dump(exclude_unset=True), created_by=current_admin.id)
+        db.add(db_paper)
         db.commit()
-        db.refresh(db_news)
-        return db_news
+        db.refresh(db_paper)
+        return db_paper
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="News already exists or violates unique constraint"
+            detail="Research paper already exists or violates unique constraint"
         )
     except SQLAlchemyError:
         db.rollback()
@@ -98,28 +102,28 @@ async def create_news(
 
 # ========== UPDATE OPERATION ==========
 
-@router.put("/{news_id}", response_model=NewsResponse)
-async def update_news(
-    news_id: int,
-    news: NewsUpdate,
+@router.put("/{paper_id}", response_model=ResearchPaperResponse)
+async def update_research_paper(
+    paper_id: int,
+    paper: ResearchPaperUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ):
-    """Update an existing news article (Admin only)"""
-    db_news = db.query(News).filter(News.id == news_id).first()
-    if not db_news:
+    """Update an existing research paper (Admin only)"""
+    db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
+    if not db_paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"News with id {news_id} not found"
+            detail=f"Research paper with id {paper_id} not found"
         )
     
     try:
-        for key, value in news.model_dump(exclude_unset=True).items():
-            setattr(db_news, key, value)
+        for key, value in paper.model_dump(exclude_unset=True).items():
+            setattr(db_paper, key, value)
         
         db.commit()
-        db.refresh(db_news)
-        return db_news
+        db.refresh(db_paper)
+        return db_paper
     except IntegrityError:
         db.rollback()
         raise HTTPException(
@@ -135,27 +139,27 @@ async def update_news(
 
 # ========== DELETE OPERATION ==========
 
-@router.delete("/{news_id}", status_code=status.HTTP_200_OK)
-async def delete_news(
-    news_id: int,
+@router.delete("/{paper_id}", status_code=status.HTTP_200_OK)
+async def delete_research_paper(
+    paper_id: int,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_user)
 ) -> Dict[str, str]:
-    """Delete a news article (Admin only)"""
-    db_news = db.query(News).filter(News.id == news_id).first()
-    if not db_news:
+    """Delete a research paper (Admin only)"""
+    db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
+    if not db_paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"News with id {news_id} not found"
+            detail=f"Research paper with id {paper_id} not found"
         )
     
     try:
-        db.delete(db_news)
+        db.delete(db_paper)
         db.commit()
-        return {"message": "News deleted successfully"}
+        return {"message": "Research paper deleted successfully"}
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Failed to delete news"
+            detail="Failed to delete research paper"
         )

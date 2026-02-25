@@ -1,35 +1,33 @@
-from .admin import AdminCreate, AdminResponse, AdminLogin, Token, User, UserCreate, UserResponse, UserLogin
+from .admin import AdminCreate, AdminResponse, AdminLogin, AdminUpdate, Token
 from .lab_entities import (
     # Categories
-    CategoryCreate, CategoryResponse,
+    CategoryCreate, CategoryUpdate, CategoryResponse,
     # Projects
-    ResearchProjectCreate, ResearchProjectResponse,
+    ResearchProjectCreate, ResearchProjectUpdate, ResearchProjectResponse,
     # Research Clubs
-    ResearchClubCreate, ResearchClubResponse,
+    ResearchClubCreate, ResearchClubUpdate, ResearchClubResponse,
     # Research Papers
-    ResearchPaperCreate, ResearchPaperResponse,
+    ResearchPaperCreate, ResearchPaperUpdate, ResearchPaperResponse,
     # Events
-    EventCreate, EventResponse,
+    EventCreate, EventUpdate, EventResponse,
     # News
-    NewsCreate, NewsResponse,
+    NewsCreate, NewsUpdate, NewsResponse,
     # Team
-    TeamMemberCreate, TeamMemberResponse,
+    TeamMemberCreate, TeamMemberUpdate, TeamMemberResponse,
     # Advisory
-    AdvisoryBoardMemberCreate, AdvisoryBoardMemberResponse
+    AdvisoryBoardMemberCreate, AdvisoryBoardMemberUpdate, AdvisoryBoardMemberResponse
 )
 
 __all__ = [
-    # Admin schemas (new names)
-    "AdminCreate", "AdminResponse", "AdminLogin", "Token",
-    # Backward compatibility aliases
-    "User", "UserCreate", "UserResponse", "UserLogin",
+    # Admin schemas
+    "AdminCreate", "AdminResponse", "AdminLogin", "AdminUpdate", "Token",
     # Lab entities
-    "CategoryCreate", "CategoryResponse",
-    "ResearchProjectCreate", "ResearchProjectResponse",
-    "ResearchClubCreate", "ResearchClubResponse",
-    "ResearchPaperCreate", "ResearchPaperResponse",
-    "EventCreate", "EventResponse",
-    "NewsCreate", "NewsResponse",
-    "TeamMemberCreate", "TeamMemberResponse",
-    "AdvisoryBoardMemberCreate", "AdvisoryBoardMemberResponse"
+    "CategoryCreate", "CategoryUpdate", "CategoryResponse",
+    "ResearchProjectCreate", "ResearchProjectUpdate", "ResearchProjectResponse",
+    "ResearchClubCreate", "ResearchClubUpdate", "ResearchClubResponse",
+    "ResearchPaperCreate", "ResearchPaperUpdate", "ResearchPaperResponse",
+    "EventCreate", "EventUpdate", "EventResponse",
+    "NewsCreate", "NewsUpdate", "NewsResponse",
+    "TeamMemberCreate", "TeamMemberUpdate", "TeamMemberResponse",
+    "AdvisoryBoardMemberCreate", "AdvisoryBoardMemberUpdate", "AdvisoryBoardMemberResponse"
 ]
