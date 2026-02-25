@@ -29,29 +29,20 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 def verify_access_token(token: str):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, 
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
         id: str = payload.get("admin_id")
+        # print("Decoded token payload:", payload)
         if id is None:
-            raise credentials_exception
-        token_data = TokenData(id=id)
+            return None
+
+        return TokenData(id=id)
+
     except InvalidTokenError:
-        raise credentials_exception
-    credentials_exception
-    return token_data
+        return None
     
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     token_data = verify_access_token(token)
     user = db.query(Admin).filter(Admin.id == token_data.id).first()
     return user
-
-
-# def get_admin_by_email(db: Session, email: str) -> Optional[Admin]:
-#     return db.query(Admin).filter(Admin.email == email).first()
-
-

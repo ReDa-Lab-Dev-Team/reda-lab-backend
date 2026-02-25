@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
@@ -8,8 +8,6 @@ import shutil
 from datetime import datetime
 
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
-from app.models.admin import Admin
 from app.schemas.lab_entities import EventCreate, EventResponse, EventUpdate
 from app.models.lab_entities import Event, EventType
 from app.config.config import settings
@@ -27,8 +25,8 @@ async def get_all_events(
     is_active: Optional[bool] = None,
     sort_by: str = Query("start_datetime", pattern="^(title|start_datetime|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get all events with pagination and filters (Admin only)"""
     try:
@@ -64,8 +62,8 @@ async def get_all_events(
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(
     event_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single event by ID (Admin only)"""
     db_event = db.query(Event).filter(Event.id == event_id).first()
@@ -80,12 +78,14 @@ async def get_event(
 
 @router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(
+    request: Request,
     event: EventCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Create a new event (Admin only)"""
     try:
+        current_admin = request.state.user
         db_event = Event(**event.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_event)
         db.commit()
@@ -110,8 +110,8 @@ async def create_event(
 async def update_event(
     event_id: int,
     event: EventUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing event (Admin only)"""
     db_event = db.query(Event).filter(Event.id == event_id).first()
@@ -146,8 +146,8 @@ async def update_event(
 @router.delete("/{event_id}", status_code=status.HTTP_200_OK)
 async def delete_event(
     event_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete an event (Admin only)"""
     db_event = db.query(Event).filter(Event.id == event_id).first()
@@ -176,12 +176,14 @@ async def delete_event(
 
 @router.post("/{event_id}/upload-image")
 async def upload_event_image(
+    request: Request,
     event_id: int,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Upload event image (Admin only)"""
+    current_admin = request.state.user
     db_event = db.query(Event).filter(Event.id == event_id).first()
     if not db_event:
         raise HTTPException(

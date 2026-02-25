@@ -1,12 +1,10 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
 
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
-from app.models.admin import Admin
 from app.schemas.lab_entities import ResearchClubCreate, ResearchClubResponse, ResearchClubUpdate
 from app.models.lab_entities import ResearchClub
 
@@ -22,8 +20,8 @@ async def get_all_research_clubs(
     is_active: Optional[bool] = None,
     sort_by: str = Query("created_at", pattern="^(name|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get all research clubs with pagination and filters (Admin only)"""
     try:
@@ -57,8 +55,8 @@ async def get_all_research_clubs(
 @router.get("/{club_id}", response_model=ResearchClubResponse)
 async def get_research_club(
     club_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single research club by ID (Admin only)"""
     db_club = db.query(ResearchClub).filter(ResearchClub.id == club_id).first()
@@ -73,12 +71,14 @@ async def get_research_club(
 
 @router.post("", response_model=ResearchClubResponse, status_code=status.HTTP_201_CREATED)
 async def create_research_club(
+    request: Request,
     club: ResearchClubCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Create a new research club (Admin only)"""
     try:
+        current_admin = request.state.user
         db_club = ResearchClub(**club.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_club)
         db.commit()
@@ -103,8 +103,8 @@ async def create_research_club(
 async def update_research_club(
     club_id: int,
     club: ResearchClubUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing research club (Admin only)"""
     db_club = db.query(ResearchClub).filter(ResearchClub.id == club_id).first()
@@ -139,8 +139,8 @@ async def update_research_club(
 @router.delete("/{club_id}", status_code=status.HTTP_200_OK)
 async def delete_research_club(
     club_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete a research club (Admin only)"""
     db_club = db.query(ResearchClub).filter(ResearchClub.id == club_id).first()

@@ -1,12 +1,10 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status,Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
 
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
-from app.models.admin import Admin
 from app.schemas.lab_entities import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.models.lab_entities import Category
 
@@ -25,7 +23,7 @@ async def get_all_categories(
     sort_by: str = Query("name", pattern="^(name|created_at|updated_at)$"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
-    # current_admin: Admin = Depends(get_current_user) # no need to authenticate for categories
+    #   # no need to authenticate for categories
 ):
     """Get all categories with pagination and filters (Admin only)"""
     try:
@@ -54,8 +52,8 @@ async def get_all_categories(
 @router.get("/{category_id}", response_model=CategoryResponse)
 async def get_category(
     category_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single category by ID (Admin only)"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
@@ -71,12 +69,13 @@ async def get_category(
 
 @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(
+    request: Request,  
     category: CategoryCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     """Create a new category (Admin only)"""
     try:
+        current_admin = request.state.user  
         db_category = Category(
             **category.model_dump(exclude_unset=True),
             created_by=current_admin.id
@@ -105,8 +104,8 @@ async def create_category(
 async def update_category(
     category_id: int,
     category: CategoryUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing category (Admin only)"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
@@ -141,8 +140,8 @@ async def update_category(
 @router.delete("/{category_id}", status_code=status.HTTP_200_OK)
 async def delete_category(
     category_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete a category (Admin only)"""
     db_category = db.query(Category).filter(Category.id == category_id).first()

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Response
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Response,Request
 from app.schemas.admin import AdminCreate, AdminResponse, AdminUpdate
 from sqlalchemy.orm import Session
 from app.config.database import get_db
@@ -38,23 +38,24 @@ async def create(admin: AdminCreate, db: Session = Depends(get_db)):
 # PROTECTED ROUTES - Authentication required
 @router.get("/all_admins", response_model=list[AdminResponse])
 async def read_all_admins(
-    current_admin: AdminResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     admins = db.query(Admin).all()
     return admins
 
 @router.get("/me", response_model=AdminResponse)
-async def read_admin_me(current_admin: AdminResponse = Depends(get_current_user)):
-    return current_admin
+async def read_admin_me(request: Request):
+    user = request.state.user
+    return user
 
 @router.patch("/update/{admin_id}", response_model=AdminResponse)
 async def update_admin(
+    request: Request,
     admin_id: int,
     admin_update: AdminUpdate,
-    current_admin: AdminResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    current_admin = request.state.user
     # Allow superadmin to update any account OR users to update their own account
     if current_admin.role != "superadmin" and current_admin.id != admin_id:
         raise HTTPException(
@@ -103,13 +104,15 @@ async def update_admin(
 
 @router.post("/{admin_id}/avatar")
 async def upload_avatar(
+    # request need to be on top to access request.state.user
+    request: Request,
     admin_id: int,
     file: UploadFile = File(...),
-    current_admin: AdminResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Upload avatar (creates new or replaces existing)"""
     try:
+        current_admin = request.state.user
         # Allow superadmin to upload avatar for any account OR users to upload their own
         if current_admin.role != "superadmin" and current_admin.id != admin_id:
             raise HTTPException(
@@ -182,11 +185,13 @@ async def upload_avatar(
 
 @router.delete("/delete/{admin_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_admin(
+    request: Request,
     admin_id: int,
-    current_admin: AdminResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    
     # Only allow superadmin to delete accounts
+    current_admin = request.state.user
     if current_admin.role != "superadmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

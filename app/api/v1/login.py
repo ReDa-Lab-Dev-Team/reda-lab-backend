@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=Token)
+@router.post("", response_model=Token)
 async def login_admin(admin_credentials: AdminLogin = Depends(), db: Session = Depends(get_db)):
     
     admin = db.query(Admin).filter(Admin.email == admin_credentials.email).first()

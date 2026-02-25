@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.config.config import settings
 import os
+from app.middleware.auth import AuthMiddleware
 # from app.config.database import engine, Base
 
 # Create all tables
@@ -23,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Authentication middleware
+app.add_middleware(AuthMiddleware)
 
 os.makedirs(settings.upload_dir, exist_ok=True)
 

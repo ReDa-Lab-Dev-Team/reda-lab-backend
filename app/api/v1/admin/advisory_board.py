@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
@@ -22,8 +22,8 @@ async def get_all_advisory_members(
     is_active: Optional[bool] = None,
     sort_by: str = Query("created_at", pattern="^(name|position|institution|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get all advisory board members with pagination and filters (Admin only)"""
     try:
@@ -58,8 +58,8 @@ async def get_all_advisory_members(
 @router.get("/{member_id}", response_model=AdvisoryBoardMemberResponse)
 async def get_advisory_member(
     member_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single advisory board member by ID (Admin only)"""
     db_member = db.query(AdvisoryBoardMember).filter(AdvisoryBoardMember.id == member_id).first()
@@ -74,12 +74,14 @@ async def get_advisory_member(
 
 @router.post("", response_model=AdvisoryBoardMemberResponse, status_code=status.HTTP_201_CREATED)
 async def create_advisory_member(
+    request: Request,
     member: AdvisoryBoardMemberCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Create a new advisory board member (Admin only)"""
     try:
+        current_admin = request.state.user
         db_member = AdvisoryBoardMember(**member.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_member)
         db.commit()
@@ -104,8 +106,8 @@ async def create_advisory_member(
 async def update_advisory_member(
     member_id: int,
     member: AdvisoryBoardMemberUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing advisory board member (Admin only)"""
     db_member = db.query(AdvisoryBoardMember).filter(AdvisoryBoardMember.id == member_id).first()
@@ -140,8 +142,8 @@ async def update_advisory_member(
 @router.delete("/{member_id}", status_code=status.HTTP_200_OK)
 async def delete_advisory_member(
     member_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete an advisory board member (Admin only)"""
     db_member = db.query(AdvisoryBoardMember).filter(AdvisoryBoardMember.id == member_id).first()

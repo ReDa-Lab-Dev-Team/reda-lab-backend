@@ -1,12 +1,10 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status as http_status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status as http_status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
 from app.utils.helper_functions import slugify
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
-from app.models.admin import Admin
 from app.schemas.lab_entities import ResearchProjectCreate, ResearchProjectResponse, ProjectStatus, ResearchProjectUpdate
 from app.models.lab_entities import ResearchProject, Category, TeamMember
 
@@ -23,7 +21,7 @@ async def get_all_projects(
     category_id: Optional[int] = Query(None, description="Filter by category ID"),
     sort_by: str = Query("created_at", pattern="^(title|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db)#, current_admin: Admin = Depends(get_current_user)
+    db: Session = Depends(get_db)#,  
 ):
     """Get all research projects with pagination and filters (Admin only)"""
     try:
@@ -64,8 +62,8 @@ async def get_all_projects(
 @router.get("/{project_id}", response_model=ResearchProjectResponse)
 async def get_project(
     project_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single research project by ID (Admin only)"""
     db_project = db.query(ResearchProject).filter(
@@ -85,12 +83,14 @@ async def get_project(
 
 @router.post("", response_model=ResearchProjectResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_project(
+    request: Request,
     project: ResearchProjectCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Create a new research project (Admin only)"""
     try:
+        current_admin = request.state.user
         # Convert Pydantic model to dictionary
         project_data = project.model_dump(exclude_unset=True)
         
@@ -171,8 +171,8 @@ async def create_project(
 async def update_project(
     project_id: int,
     project: ResearchProjectUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing research project (Admin only)"""
     # Find existing project
@@ -275,8 +275,8 @@ async def update_project(
 async def delete_project(
     project_id: int,
     hard_delete: bool = Query(False, description="Permanently delete (true) or soft delete (false)"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete a research project - soft delete by default (Admin only)"""
     db_project = db.query(ResearchProject).filter(

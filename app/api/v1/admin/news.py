@@ -1,12 +1,10 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
 
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
-from app.models.admin import Admin
 from app.schemas.lab_entities import NewsCreate, NewsResponse, NewsUpdate
 from app.models.lab_entities import News
 
@@ -22,8 +20,8 @@ async def get_all_news(
     is_published: Optional[bool] = None,
     sort_by: str = Query("published_date", pattern="^(title|published_date|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get all news articles with pagination and filters (Admin only)"""
     try:
@@ -56,8 +54,8 @@ async def get_all_news(
 @router.get("/{news_id}", response_model=NewsResponse)
 async def get_news(
     news_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single news article by ID (Admin only)"""
     db_news = db.query(News).filter(News.id == news_id).first()
@@ -72,12 +70,14 @@ async def get_news(
 
 @router.post("", response_model=NewsResponse, status_code=status.HTTP_201_CREATED)
 async def create_news(
+    request: Request,
     news: NewsCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Create a new news article (Admin only)"""
     try:
+        current_admin = request.state.user
         db_news = News(**news.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_news)
         db.commit()
@@ -102,8 +102,8 @@ async def create_news(
 async def update_news(
     news_id: int,
     news: NewsUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing news article (Admin only)"""
     db_news = db.query(News).filter(News.id == news_id).first()
@@ -138,8 +138,8 @@ async def update_news(
 @router.delete("/{news_id}", status_code=status.HTTP_200_OK)
 async def delete_news(
     news_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete a news article (Admin only)"""
     db_news = db.query(News).filter(News.id == news_id).first()

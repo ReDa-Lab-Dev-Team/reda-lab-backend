@@ -1,12 +1,10 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
 
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
-from app.models.admin import Admin
 from app.schemas.lab_entities import ResearchPaperCreate, ResearchPaperResponse, ResearchPaperUpdate
 from app.models.lab_entities import ResearchPaper, PaperType
 
@@ -23,8 +21,8 @@ async def get_all_research_papers(
     is_published: Optional[bool] = None,
     sort_by: str = Query("published_date", pattern="^(title|published_date|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get all research papers with pagination and filters (Admin only)"""
     try:
@@ -60,8 +58,8 @@ async def get_all_research_papers(
 @router.get("/{paper_id}", response_model=ResearchPaperResponse)
 async def get_research_paper(
     paper_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Get a single research paper by ID (Admin only)"""
     db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
@@ -76,12 +74,14 @@ async def get_research_paper(
 
 @router.post("", response_model=ResearchPaperResponse, status_code=status.HTTP_201_CREATED)
 async def create_research_paper(
+    request: Request,
     paper: ResearchPaperCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Create a new research paper (Admin only)"""
     try:
+        current_admin = request.state.user
         db_paper = ResearchPaper(**paper.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_paper)
         db.commit()
@@ -106,8 +106,8 @@ async def create_research_paper(
 async def update_research_paper(
     paper_id: int,
     paper: ResearchPaperUpdate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ):
     """Update an existing research paper (Admin only)"""
     db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
@@ -142,8 +142,8 @@ async def update_research_paper(
 @router.delete("/{paper_id}", status_code=status.HTTP_200_OK)
 async def delete_research_paper(
     paper_id: int,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_user)
+     db: Session = Depends(get_db)
+     
 ) -> Dict[str, str]:
     """Delete a research paper (Admin only)"""
     db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
