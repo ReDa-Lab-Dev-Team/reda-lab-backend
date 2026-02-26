@@ -9,40 +9,19 @@ from app.config.database import SessionLocal
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-
+        
         public_routes = [
             '/',
             '/login', # public routes
             '/docs',
             '/redoc',
-            '/openapi.json'
-
+            '/openapi.json',
         ]
-
-        # Public read-only routes (GET only)
-        public_read_prefixes = [
-            '/api/v1/admin/advisory-board',
-            '/api/v1/admin/categories',
-            '/api/v1/admin/events',
-            '/api/v1/admin/news',
-            '/api/v1/admin/projects',
-            '/api/v1/admin/research-club',
-            '/api/v1/admin/research-paper',
-            '/api/v1/admin/team-members'
-        ]
-        
-        # print(f"Incoming request: {request.method} {request.url.path}")
-        
         
         if request.url.path in public_routes:
             return await call_next(request)# Skip auth check
 
-        # Allow GET requests to public read endpoints
-        if request.method == "GET":
-            for prefix in public_read_prefixes:
-                if request.url.path.startswith(prefix):
-                    return await call_next(request)
-        print(f"Incoming request: {request.method} {request.url.path}")
+        # print(f"Incoming request: {request.method} {request.url.path}")
 
         
         # 2. Extract token from header

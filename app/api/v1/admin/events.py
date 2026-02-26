@@ -6,11 +6,11 @@ from sqlalchemy import or_, desc, asc
 import os
 import shutil
 from datetime import datetime
-
 from app.config.database import get_db
 from app.schemas.lab_entities import EventCreate, EventResponse, EventUpdate
 from app.models.lab_entities import Event, EventType
 from app.config.config import settings
+from app.utils.helper_functions import slugify
 
 router = APIRouter(prefix="/events", tags=["Admin - Events"])
 
@@ -23,7 +23,7 @@ async def get_all_events(
     search: Optional[str] = None,
     event_type: Optional[EventType] = None,
     is_active: Optional[bool] = None,
-    sort_by: str = Query("start_datetime", pattern="^(title|start_datetime|created_at|updated_at)$"),
+    sort_by: str = Query("created_at", pattern="^(title|start_datetime|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
      db: Session = Depends(get_db)
      
@@ -86,7 +86,23 @@ async def create_event(
     """Create a new event (Admin only)"""
     try:
         current_admin = request.state.user
-        db_event = Event(**event.model_dump(exclude_unset=True), created_by=current_admin.id)
+        # Convert Pydantic model to dictionary
+        event_data = event.model_dump(exclude_unset=True)
+        
+        # Generate slug if not provided
+        if not event_data.get('slug'):
+            event_data["slug"] = slugify(event.title)
+        
+        existing_event = db.query(Event).filter(
+            Event.slug==event_data["slug"],
+            Event.is_deleted==False
+        ).first()
+        if existing_event:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Event with this slug already exists"
+            )
+        db_event = Event(**event_data, created_by=current_admin.id)
         db.add(db_event)
         db.commit()
         db.refresh(db_event)
@@ -148,8 +164,7 @@ async def delete_event(
     event_id: int,
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
-    """Delete an event (Admin only)"""
+) :
     db_event = db.query(Event).filter(Event.id == event_id).first()
     if not db_event:
         raise HTTPException(
@@ -176,14 +191,11 @@ async def delete_event(
 
 @router.post("/{event_id}/upload-image")
 async def upload_event_image(
-    request: Request,
     event_id: int,
     file: UploadFile = File(...),
      db: Session = Depends(get_db)
      
 ):
-    """Upload event image (Admin only)"""
-    current_admin = request.state.user
     db_event = db.query(Event).filter(Event.id == event_id).first()
     if not db_event:
         raise HTTPException(

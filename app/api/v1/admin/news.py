@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -7,6 +7,7 @@ from sqlalchemy import or_, desc, asc
 from app.config.database import get_db
 from app.schemas.lab_entities import NewsCreate, NewsResponse, NewsUpdate
 from app.models.lab_entities import News
+from app.utils.helper_functions import slugify
 
 router = APIRouter(prefix="/news", tags=["Admin - News"])
 
@@ -18,7 +19,7 @@ async def get_all_news(
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
     is_published: Optional[bool] = None,
-    sort_by: str = Query("published_date", pattern="^(title|published_date|created_at|updated_at)$"),
+    sort_by: str = Query("created_at", pattern="^(title|published_date|created_at|updated_at)$"),
     order: str = Query("desc", pattern="^(asc|desc)$"),
      db: Session = Depends(get_db)
      
@@ -78,7 +79,24 @@ async def create_news(
     """Create a new news article (Admin only)"""
     try:
         current_admin = request.state.user
-        db_news = News(**news.model_dump(exclude_unset=True), created_by=current_admin.id)
+        
+        # Convert Pydantic model to dictionary
+        news_data = news.model_dump(exclude_unset=True)
+        # Generate slug if not provided
+        if not news_data.get('slug'):
+            news_data['slug'] = slugify(news.title)
+            
+        existing_news = db.query(News).filter(
+            News.slug == news_data['slug'],
+            News.is_deleted == False
+        ).first()
+        if existing_news:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="News with this slug already exists"
+            )
+        
+        db_news = News(**news_data, created_by=current_admin.id)
         db.add(db_news)
         db.commit()
         db.refresh(db_news)
@@ -140,7 +158,7 @@ async def delete_news(
     news_id: int,
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
+):
     """Delete a news article (Admin only)"""
     db_news = db.query(News).filter(News.id == news_id).first()
     if not db_news:

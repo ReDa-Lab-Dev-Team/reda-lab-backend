@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status as http_status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
@@ -54,7 +54,7 @@ async def get_all_projects(
         
     except SQLAlchemyError as e:
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve projects"
         )
 
@@ -73,7 +73,7 @@ async def get_project(
     
     if not db_project:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with id {project_id} not found"
         )
     
@@ -81,7 +81,7 @@ async def get_project(
 
 # ========== CREATE OPERATION ==========
 
-@router.post("", response_model=ResearchProjectResponse, status_code=http_status.HTTP_201_CREATED)
+@router.post("", response_model=ResearchProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     request: Request,
     project: ResearchProjectCreate,
@@ -106,7 +106,7 @@ async def create_project(
         
         if existing_project:
             raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Project with slug '{project_data['slug']}' already exists"
             )
         
@@ -126,7 +126,7 @@ async def create_project(
             
             if len(contributors) != len(contributor_ids):
                 raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail="One or more contributor IDs are invalid"
                 )
             db_project.contributors = contributors
@@ -139,7 +139,7 @@ async def create_project(
             
             if len(categories) != len(category_ids):
                 raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail="One or more category IDs are invalid"
                 )
             db_project.categories = categories
@@ -154,13 +154,13 @@ async def create_project(
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Project already exists or violates unique constraint"
         )
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred"
         )
 
@@ -183,7 +183,7 @@ async def update_project(
     
     if not db_project:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with id {project_id} not found"
         )
     
@@ -205,7 +205,7 @@ async def update_project(
             
             if existing_project:
                 raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Project with slug '{project_data['slug']}' already exists"
                 )
         
@@ -226,7 +226,7 @@ async def update_project(
                 
                 if len(contributors) != len(contributor_ids):
                     raise HTTPException(
-                        status_code=http_status.HTTP_400_BAD_REQUEST,
+                        status_code=status.HTTP_400_BAD_REQUEST,
                         detail="One or more contributor IDs are invalid"
                     )
                 db_project.contributors = contributors
@@ -243,7 +243,7 @@ async def update_project(
                 
                 if len(categories) != len(category_ids):
                     raise HTTPException(
-                        status_code=http_status.HTTP_400_BAD_REQUEST,
+                        status_code=status.HTTP_400_BAD_REQUEST,
                         detail="One or more category IDs are invalid"
                     )
                 db_project.categories = categories
@@ -258,26 +258,26 @@ async def update_project(
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Update violates unique constraint"
         )
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred"
         )
 
 
 # ========== DELETE OPERATION ==========
 
-@router.delete("/{project_id}", status_code=http_status.HTTP_200_OK)
+@router.delete("/{project_id}", status_code=status.HTTP_200_OK)
 async def delete_project(
     project_id: int,
     hard_delete: bool = Query(False, description="Permanently delete (true) or soft delete (false)"),
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
+):
     """Delete a research project - soft delete by default (Admin only)"""
     db_project = db.query(ResearchProject).filter(
         ResearchProject.id == project_id,
@@ -286,7 +286,7 @@ async def delete_project(
     
     if not db_project:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with id {project_id} not found"
         )
     
@@ -306,6 +306,6 @@ async def delete_project(
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete project"
         )

@@ -21,3 +21,4 @@ class Settings(BaseSettings):
         
 
 settings = Settings()
+# ENVIRONMENT=development  # Change to "production" when deploying

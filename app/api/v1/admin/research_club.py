@@ -141,7 +141,7 @@ async def delete_research_club(
     club_id: int,
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
+):
     """Delete a research club (Admin only)"""
     db_club = db.query(ResearchClub).filter(ResearchClub.id == club_id).first()
     if not db_club:

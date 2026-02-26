@@ -18,7 +18,6 @@ async def get_all_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
-    category_type: Optional[str] = None,
     status: Optional[str] = None,
     sort_by: str = Query("name", pattern="^(name|created_at|updated_at)$"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
@@ -107,7 +106,6 @@ async def update_category(
      db: Session = Depends(get_db)
      
 ):
-    """Update an existing category (Admin only)"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(
@@ -142,8 +140,7 @@ async def delete_category(
     category_id: int,
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
-    """Delete a category (Admin only)"""
+):
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(
@@ -154,7 +151,7 @@ async def delete_category(
     try:
         db.delete(db_category)
         db.commit()
-        return {"message": "Category deleted successfully"}
+        return {"detail": f"Category with id {category_id} deleted successfully"}
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(

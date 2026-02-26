@@ -82,11 +82,26 @@ async def create_advisory_member(
     """Create a new advisory board member (Admin only)"""
     try:
         current_admin = request.state.user
+        
+        # Check if advisory member with same name and position already exists
+        existing_member = db.query(AdvisoryBoardMember).filter(
+            AdvisoryBoardMember.name == member.name,
+            AdvisoryBoardMember.position == member.position
+        ).first()
+        
+        if existing_member:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Advisory board member '{member.name}' with position '{member.position}' already exists"
+            )
+        
         db_member = AdvisoryBoardMember(**member.model_dump(exclude_unset=True), created_by=current_admin.id)
         db.add(db_member)
         db.commit()
         db.refresh(db_member)
         return db_member
+    except HTTPException:
+        raise
     except IntegrityError:
         db.rollback()
         raise HTTPException(
@@ -144,7 +159,7 @@ async def delete_advisory_member(
     member_id: int,
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
+):
     """Delete an advisory board member (Admin only)"""
     db_member = db.query(AdvisoryBoardMember).filter(AdvisoryBoardMember.id == member_id).first()
     if not db_member:

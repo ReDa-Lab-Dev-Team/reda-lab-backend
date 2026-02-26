@@ -1,12 +1,15 @@
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
-
 from app.config.database import get_db
 from app.schemas.lab_entities import ResearchPaperCreate, ResearchPaperResponse, ResearchPaperUpdate
 from app.models.lab_entities import ResearchPaper, PaperType
+import os 
+from app.config.config import settings
+import shutil
+from datetime import datetime
 
 router = APIRouter(prefix="/research-papers", tags=["Admin - Research Papers"])
 
@@ -19,8 +22,8 @@ async def get_all_research_papers(
     search: Optional[str] = None,
     paper_type: Optional[PaperType] = None,
     is_published: Optional[bool] = None,
-    sort_by: str = Query("published_date", pattern="^(title|published_date|created_at|updated_at)$"),
-    order: str = Query("desc", pattern="^(asc|desc)$"),
+    sort_by: str = Query("created_at", pattern="^(title|published_date|created_at|updated_at)$"),
+    order: str = Query("desc", pattern="^(asc|desc)$"), 
      db: Session = Depends(get_db)
      
 ):
@@ -99,6 +102,56 @@ async def create_research_paper(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Database error occurred"
         )
+        
+@router.post("/{paper_id}/upload-pdf")
+async def upload_pdf(
+    paper_id: int,
+    file: UploadFile = File(...),
+     db: Session = Depends(get_db)
+     
+):
+    db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
+    if not db_paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Research paper with id {paper_id} not found"
+        )
+    
+    try:
+        # Create directory if not exists
+        upload_dir = os.path.join(settings.upload_dir, 'research_papers')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_extension = os.path.splitext(file.filename)[1]
+        filename = f"research_paper_{paper_id}_{timestamp}{file_extension}"
+        file_location = os.path.join(upload_dir, filename)
+        
+        # Delete old file if exists
+        if db_paper.pdf_url and os.path.exists(db_paper.pdf_url):
+            os.remove(db_paper.pdf_url)
+        
+        # Save new file
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Update database
+        db_paper.pdf_url = file_location
+        db.commit()
+        db.refresh(db_paper)
+        
+        return {
+            "message": "PDF uploaded successfully",
+            "location": file_location,
+            "content_type": file.content_type
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload image: {str(e)}"
+        )
 
 # ========== UPDATE OPERATION ==========
 
@@ -137,6 +190,7 @@ async def update_research_paper(
             detail="Database error occurred"
         )
 
+
 # ========== DELETE OPERATION ==========
 
 @router.delete("/{paper_id}", status_code=status.HTTP_200_OK)
@@ -144,8 +198,7 @@ async def delete_research_paper(
     paper_id: int,
      db: Session = Depends(get_db)
      
-) -> Dict[str, str]:
-    """Delete a research paper (Admin only)"""
+):
     db_paper = db.query(ResearchPaper).filter(ResearchPaper.id == paper_id).first()
     if not db_paper:
         raise HTTPException(

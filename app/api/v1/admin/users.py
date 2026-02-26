@@ -8,12 +8,16 @@ import os
 import shutil
 from app.config.config import settings
 from datetime import datetime
+from typing import Optional
+from app.services.users import UserService
 
 router = APIRouter(prefix="/user", tags=["Admin - Users"])
 
+service = UserService()
+
 # PUBLIC ROUTE - No authentication required
-@router.post("/register", response_model=AdminResponse)
-async def create(admin: AdminCreate, db: Session = Depends(get_db)):
+@router.post("/register",response_model=AdminResponse)
+async def create(admin: AdminCreate = Depends(AdminCreate.as_form), avatar: UploadFile = File(...), db: Session = Depends(get_db)):
     db_admin = db.query(Admin).filter(
         (Admin.email == admin.email) | (Admin.username == admin.username)
     ).first()
@@ -23,11 +27,39 @@ async def create(admin: AdminCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT, 
             detail={"msg": "Email or username already registered"}
         )
-
+        
+    # Handle avatar upload
+    allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
+    if avatar.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"msg": "Only image files are allowed (JPEG, PNG, WebP)"}
+        )
+        
+    if avatar:
+        # Create upload directory
+        path = os.path.join(settings.upload_dir, 'user')
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+        
+        # Create unique filename with safe extension
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_ext = os.path.splitext(avatar.filename)[1]
+        filename = f"admin_{timestamp}{file_ext}"
+        file_location = os.path.join(path, filename)
+        
+        # Save file
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(avatar.file, buffer)
+    else:
+        file_location = None
+        
     new_admin = Admin(
         email=admin.email,
         username=admin.username,
+        avatar=file_location
     )
+    
     new_admin.set_password(admin.password)
     
     db.add(new_admin)
@@ -36,12 +68,15 @@ async def create(admin: AdminCreate, db: Session = Depends(get_db)):
     return new_admin
 
 # PROTECTED ROUTES - Authentication required
-@router.get("/all_admins", response_model=list[AdminResponse])
+@router.get("", response_model=list[AdminResponse])
 async def read_all_admins(
     db: Session = Depends(get_db)
 ):
     admins = db.query(Admin).all()
+    
     return admins
+    # return service.get_users(db)
+
 
 @router.get("/me", response_model=AdminResponse)
 async def read_admin_me(request: Request):
@@ -52,7 +87,8 @@ async def read_admin_me(request: Request):
 async def update_admin(
     request: Request,
     admin_id: int,
-    admin_update: AdminUpdate,
+    admin_update: AdminUpdate = Depends(AdminUpdate.as_form),
+    avatar: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     current_admin = request.state.user
@@ -89,99 +125,147 @@ async def update_admin(
                 detail={"msg": "Email or username already in use"}
             )
     
-    # Update only provided fields
+    # Update only provided fields from schema
     update_data = admin_update.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
-        if field == "password":
-            admin.set_password(value)
-        else:
-            setattr(admin, field, value)
+        if value is not None:  # Skip None values
+            if field == "password":
+                admin.set_password(value)
+            else:
+                setattr(admin, field, value)
     
-    db.commit()
-    db.refresh(admin)
-    return admin
-
-@router.post("/{admin_id}/avatar")
-async def upload_avatar(
-    # request need to be on top to access request.state.user
-    request: Request,
-    admin_id: int,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
-):
-    """Upload avatar (creates new or replaces existing)"""
-    try:
-        current_admin = request.state.user
-        # Allow superadmin to upload avatar for any account OR users to upload their own
-        if current_admin.role != "superadmin" and current_admin.id != admin_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail={"msg": "Not authorized to update this account"}
-            )
-        
+    # Handle avatar upload
+    if avatar:
         # Validate file type
         allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
-        if file.content_type not in allowed_types:
+        if avatar.content_type not in allowed_types:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"msg": "Only image files are allowed (JPEG, PNG, WebP)"}
             )
         
-        # Check if admin exists BEFORE uploading
-        admin = db.query(Admin).filter(Admin.id == admin_id).first()
-        if not admin:
+        try:
+            # Delete old avatar if exists
+            if admin.avatar:
+                old_avatar_path = os.path.join(settings.upload_dir, admin.avatar)
+                if os.path.exists(old_avatar_path):
+                    try:
+                        os.remove(old_avatar_path)
+                    except Exception as e:
+                        print(f"Warning: Could not delete old avatar: {e}")
+            
+            # Create upload directory
+            path = os.path.join(settings.upload_dir, 'user')
+            if not os.path.exists(path):
+                os.makedirs(path, exist_ok=True)
+            
+            # Create unique filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_ext = os.path.splitext(avatar.filename)[1]
+            filename = f"admin_{admin_id}_{timestamp}{file_ext}"
+            file_location = os.path.join(path, filename)
+            
+            # Save file
+            with open(file_location, "wb") as buffer:
+                shutil.copyfileobj(avatar.file, buffer)
+            
+            # Store relative path
+            relative_path = os.path.join('user', filename)
+            admin.avatar = relative_path
+            
+        except Exception as e:
+            # Cleanup on error
+            if 'file_location' in locals() and os.path.exists(file_location):
+                os.remove(file_location)
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"msg": "Admin not found"}
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"msg": f"Failed to upload avatar: {str(e)}"}
             )
+    
+    db.commit()
+    db.refresh(admin)
+    return admin
+
+# @router.post("/{admin_id}/avatar")
+# async def upload_avatar(
+#     # request need to be on top to access request.state.user
+#     request: Request,
+#     admin_id: int,
+#     file: UploadFile = File(...),
+#     db: Session = Depends(get_db)
+# ):
+#     try:
+#         current_admin = request.state.user
+#         # Allow superadmin to upload avatar for any account OR users to upload their own
+#         if current_admin.role != "superadmin" and current_admin.id != admin_id:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail={"msg": "Not authorized to update this account"}
+#             )
         
-        # Delete old avatar if exists
-        if admin.avatar:
-            old_avatar_path = os.path.join(settings.upload_dir, admin.avatar)
-            if os.path.exists(old_avatar_path):
-                try:
-                    os.remove(old_avatar_path)
-                except Exception as e:
-                    print(f"Warning: Could not delete old avatar: {e}")
+#         # Validate file type
+#         allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
+#         if file.content_type not in allowed_types:
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail={"msg": "Only image files are allowed (JPEG, PNG, WebP)"}
+#             )
         
-        # Create upload directory
-        path = os.path.join(settings.upload_dir, 'user')
-        if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
+#         # Check if admin exists BEFORE uploading
+#         admin = db.query(Admin).filter(Admin.id == admin_id).first()
+#         if not admin:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail={"msg": "Admin not found"}
+#             )
         
-        # Create unique filename with safe extension
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_ext = os.path.splitext(file.filename)[1]
-        filename = f"admin_{admin_id}_{timestamp}{file_ext}"
-        file_location = os.path.join(path, filename)
+#         # Delete old avatar if exists
+#         if admin.avatar:
+#             old_avatar_path = os.path.join(settings.upload_dir, admin.avatar)
+#             if os.path.exists(old_avatar_path):
+#                 try:
+#                     os.remove(old_avatar_path)
+#                 except Exception as e:
+#                     print(f"Warning: Could not delete old avatar: {e}")
         
-        # Save file
-        with open(file_location, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+#         # Create upload directory
+#         path = os.path.join(settings.upload_dir, 'user')
+#         if not os.path.exists(path):
+#             os.makedirs(path, exist_ok=True)
         
-        # Store relative path instead of absolute
-        relative_path = os.path.join('user', filename)
-        admin.avatar = relative_path
+#         # Create unique filename with safe extension
+#         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+#         file_ext = os.path.splitext(file.filename)[1]
+#         filename = f"admin_{admin_id}_{timestamp}{file_ext}"
+#         file_location = os.path.join(path, filename)
         
-        db.commit()
-        db.refresh(admin)
+#         # Save file
+#         with open(file_location, "wb") as buffer:
+#             shutil.copyfileobj(file.file, buffer)
         
-        return {
-            "avatar_url": f"/upload/{relative_path}",
-            "msg": "Avatar uploaded successfully"
-        }
+#         # Store relative path instead of absolute
+#         relative_path = os.path.join('user', filename)
+#         admin.avatar = relative_path
         
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Cleanup on error
-        if 'file_location' in locals() and os.path.exists(file_location):
-            os.remove(file_location)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"msg": f"Failed to upload avatar: {str(e)}"}
-        )
+#         db.commit()
+#         db.refresh(admin)
+        
+#         return {
+#             "avatar_url": f"/upload/{relative_path}",
+#             "msg": "Avatar uploaded successfully"
+#         }
+        
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         # Cleanup on error
+#         if 'file_location' in locals() and os.path.exists(file_location):
+#             os.remove(file_location)
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail={"msg": f"Failed to upload avatar: {str(e)}"}
+#         )
 
 @router.delete("/delete/{admin_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_admin(

@@ -337,7 +337,6 @@ class AdvisoryBoardMemberUpdate(BaseModel):
     photo_url: Optional[str] = None
     is_active: Optional[bool] = None
 
-
 class AdvisoryBoardMemberResponse(AdvisoryBoardMemberBase):
     id: int
     created_at: datetime
