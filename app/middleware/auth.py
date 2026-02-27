@@ -12,7 +12,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         public_routes = [
             '/',
-            '/login', # public routes
+            '/health',
+            '/login',
             '/docs',
             '/redoc',
             '/openapi.json',
