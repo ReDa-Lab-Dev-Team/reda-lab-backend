@@ -128,3 +128,7 @@ app.mount("/upload", StaticFiles(directory=settings.upload_dir), name="upload")
 @app.get("/")
 def read_root():
     return {"message": "Welcome to REDA Lab API"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
