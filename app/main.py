@@ -63,6 +63,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import HTMLResponse
 from app.api.v1 import login
 from app.api.v1.admin import router as admin_router
 from fastapi.staticfiles import StaticFiles
@@ -73,6 +74,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from app.middleware.rate_limit import rate_limit_middleware
 from app.middleware.security_headers import security_headers_middleware
+from pathlib import Path
 
 app = FastAPI(title="REDA Lab API")
 
@@ -125,6 +127,12 @@ app.include_router(prefix="/api/v1", router=admin_router)
 
 app.mount("/upload", StaticFiles(directory=settings.upload_dir), name="upload")
 
-@app.get("/")
+# @app.get("/")
+# def read_root():
+#     return {"message": "Welcome to REDA Lab API"}
+
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    return {"message": "Welcome to REDA Lab API"}
+    template_path = Path(__file__).parent / "templates" / "landing.html"
+    with open(template_path, "r") as f:
+        return f.read()

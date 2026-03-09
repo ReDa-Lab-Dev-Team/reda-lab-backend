@@ -11,6 +11,7 @@ CLEANUP_THRESHOLD = 1000  # Clean up IPs when dict gets too large
 
 async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
+    print(f"Client IP: {client_ip}")
     current_time = time.time()
     
     # Periodic cleanup of old IPs (prevent memory leak)

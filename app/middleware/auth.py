@@ -18,7 +18,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             '/openapi.json',
         ]
         
-        if request.url.path in public_routes:
+        # Allow access to entire upload folder
+        if request.url.path in public_routes or request.url.path.startswith('/upload/'):
             return await call_next(request)# Skip auth check
 
         # print(f"Incoming request: {request.method} {request.url.path}")
