@@ -1,8 +1,11 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, ValidationError
 from typing import List, Optional
 from datetime import datetime
 from enum import Enum
 from decimal import Decimal
+from fastapi import Depends, Form, HTTPException, status
+import json
+
 
 
 # =========================================================
@@ -67,6 +70,8 @@ class TeamMemberBase(BaseModel):
     position: Optional[str] = None
     bio: Optional[str] = None
     email: Optional[EmailStr] = None
+    is_active: bool = True
+    image_url: Optional[str] = None   
     
     @field_validator('email')
     @classmethod
@@ -77,8 +82,36 @@ class TeamMemberBase(BaseModel):
 
 
 class TeamMemberCreate(TeamMemberBase):
-    is_active: bool = True
-    photo_url: Optional[str] = None
+    
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        position: Optional[str] = Form(None),
+        bio: Optional[str] = Form(None),
+        email: Optional[EmailStr] = Form(None),
+        is_active: bool = Form(True)
+    ):
+        try:
+            return cls(
+                name=name,
+                position=position,
+                bio=bio,
+                email=email,
+                is_active=is_active
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class TeamMemberUpdate(BaseModel):
@@ -88,7 +121,7 @@ class TeamMemberUpdate(BaseModel):
     bio: Optional[str] = None
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
-    photo_url: Optional[str] = None
+    image_url: Optional[str] = None
     
     @field_validator('email')
     @classmethod
@@ -96,12 +129,42 @@ class TeamMemberUpdate(BaseModel):
         if v and not v.endswith('@gmail.com'):
             raise ValueError('Email must be from @gmail.com domain')
         return v
+    
+    @classmethod
+    def as_form(
+        cls,
+        name: Optional[str] = Form(None),
+        position: Optional[str] = Form(None),
+        bio: Optional[str] = Form(None),
+        email: Optional[EmailStr] = Form(None),
+        is_active: Optional[bool] = Form(None)
+    ):
+        try:
+            return cls(
+                name=name,
+                position=position,
+                bio=bio,
+                email=email,
+                is_active=is_active
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class TeamMemberResponse(TeamMemberBase):
     id: int
     is_active: bool
-    photo_url: Optional[str] = None
+    image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -126,6 +189,50 @@ class ResearchProjectBase(BaseModel):
 class ResearchProjectCreate(ResearchProjectBase):
     contributor_ids: List[int] = []
     category_ids: List[int] = []
+    
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        description: Optional[str] = Form(None),
+        is_featured: bool = Form(False),
+        start_date: Optional[datetime] = Form(None),
+        end_date: Optional[datetime] = Form(None),
+        status: ProjectStatus = Form(ProjectStatus.active),
+        funding_source: Optional[str] = Form(None),
+        budget: Optional[Decimal] = Form(None),
+        contributor_ids: str = Form("[]"),
+        category_ids: str = Form("[]")
+    ):
+        try:
+            import json
+            contributor_ids_list = json.loads(contributor_ids) if contributor_ids else []
+            category_ids_list = json.loads(category_ids) if category_ids else []
+            
+            return cls(
+                title=title,
+                description=description,
+                is_featured=is_featured,
+                start_date=start_date,
+                end_date=end_date,
+                status=status,
+                funding_source=funding_source,
+                budget=budget,
+                contributor_ids=contributor_ids_list,
+                category_ids=category_ids_list
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class ResearchProjectUpdate(BaseModel):
@@ -142,6 +249,50 @@ class ResearchProjectUpdate(BaseModel):
     budget: Optional[Decimal] = None
     contributor_ids: Optional[List[int]] = None
     category_ids: Optional[List[int]] = None
+    
+    @classmethod
+    def as_form(
+        cls,
+        title: Optional[str] = Form(None),
+        description: Optional[str] = Form(None),
+        is_featured: Optional[bool] = Form(None),
+        start_date: Optional[datetime] = Form(None),
+        end_date: Optional[datetime] = Form(None),
+        status: Optional[ProjectStatus] = Form(None),
+        funding_source: Optional[str] = Form(None),
+        budget: Optional[Decimal] = Form(None),
+        contributor_ids: Optional[str] = Form(None),
+        category_ids: Optional[str] = Form(None)
+    ):
+        try:
+            
+            contributor_ids_list = json.loads(contributor_ids) if contributor_ids else None
+            category_ids_list = json.loads(category_ids) if category_ids else None
+            
+            return cls(
+                title=title,
+                description=description,
+                is_featured=is_featured,
+                start_date=start_date,
+                end_date=end_date,
+                status=status,
+                funding_source=funding_source,
+                budget=budget,
+                contributor_ids=contributor_ids_list,
+                category_ids=category_ids_list
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class ResearchProjectResponse(ResearchProjectBase):
@@ -169,24 +320,82 @@ class ResearchClubBase(BaseModel):
 
 
 class ResearchClubCreate(ResearchClubBase):
-    pass
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        description: Optional[str] = Form(None),
+        core_theme: Optional[str] = Form(None),
+        leaders: Optional[str] = Form(None)
+        # image_url: Optional[str] = Form(None),
+    ):
+        try:
+            return cls(
+                name=name,
+                description=description,
+                core_theme=core_theme,
+                leaders=leaders
+                # image_url=image_url
+            )
+        except ValidationError as e:
+            # Extract the error message
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class ResearchClubUpdate(BaseModel):
-    """Schema for updating research clubs - all fields optional"""
+
     name: Optional[str] = None
-    slug: Optional[str] = None
     description: Optional[str] = None
     core_theme: Optional[str] = None
     leaders: Optional[str] = None
-    image_url: Optional[str] = None
-    is_active: Optional[bool] = None
+    @classmethod
+    def as_form(
+        cls,
+        name: Optional[str] = Form(None),
+        description: Optional[str] = Form(None),
+        core_theme: Optional[str] = Form(None),
+        leaders: Optional[str] = Form(None)
+        # image_url: Optional[str] = Form(None),
+    ):
+        try:
+            return cls(
+                name=name,
+                description=description,
+                core_theme=core_theme,
+                leaders=leaders
+                # image_url=image_url
+            )
+        except ValidationError as e:
+            # Extract the error message
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class ResearchClubResponse(ResearchClubBase):
     id: int
+    is_active: bool
     created_at: datetime
     updated_at: datetime
+    image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -208,7 +417,39 @@ class ResearchPaperBase(BaseModel):
 
 
 class ResearchPaperCreate(ResearchPaperBase):
-    pass
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        abstract: Optional[str] = Form(None),
+        authors: Optional[str] = Form(None),
+        published_date: Optional[datetime] = Form(None),
+        paper_type: PaperType = Form(...),
+        online_url: Optional[str] = Form(None),
+        is_published: bool = Form(True)
+    ):
+        try:
+            return cls(
+                title=title,
+                abstract=abstract,
+                authors=authors,
+                published_date=published_date,
+                paper_type=paper_type,
+                online_url=online_url,
+                is_published=is_published
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class ResearchPaperUpdate(BaseModel):
@@ -222,6 +463,40 @@ class ResearchPaperUpdate(BaseModel):
     pdf_url: Optional[str] = None
     online_url: Optional[str] = None
     is_published: Optional[bool] = None
+    
+    @classmethod
+    def as_form(
+        cls,
+        title: Optional[str] = Form(None),
+        abstract: Optional[str] = Form(None),
+        authors: Optional[str] = Form(None),
+        published_date: Optional[datetime] = Form(None),
+        paper_type: Optional[PaperType] = Form(None),
+        online_url: Optional[str] = Form(None),
+        is_published: Optional[bool] = Form(None)
+    ):
+        try:
+            return cls(
+                title=title,
+                abstract=abstract,
+                authors=authors,
+                published_date=published_date,
+                paper_type=paper_type,
+                online_url=online_url,
+                is_published=is_published
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class ResearchPaperResponse(ResearchPaperBase):
@@ -249,7 +524,39 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
-    pass
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        description: Optional[str] = Form(None),
+        start_datetime: datetime = Form(...),
+        end_datetime: Optional[datetime] = Form(None),
+        location: Optional[str] = Form(None),
+        event_type: EventType = Form(...),
+        is_active: bool = Form(True)
+    ):
+        try:
+            return cls(
+                title=title,
+                description=description,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                location=location,
+                event_type=event_type,
+                is_active=is_active
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class EventUpdate(BaseModel):
@@ -263,6 +570,40 @@ class EventUpdate(BaseModel):
     location: Optional[str] = None
     event_type: Optional[EventType] = None
     is_active: Optional[bool] = None
+    
+    @classmethod
+    def as_form(
+        cls,
+        title: Optional[str] = Form(None),
+        description: Optional[str] = Form(None),
+        start_datetime: Optional[datetime] = Form(None),
+        end_datetime: Optional[datetime] = Form(None),
+        location: Optional[str] = Form(None),
+        event_type: Optional[EventType] = Form(None),
+        is_active: Optional[bool] = Form(None)
+    ):
+        try:
+            return cls(
+                title=title,
+                description=description,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                location=location,
+                event_type=event_type,
+                is_active=is_active
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class EventResponse(EventBase):
@@ -287,7 +628,33 @@ class NewsBase(BaseModel):
 
 
 class NewsCreate(NewsBase):
-    pass
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form(...),
+        summary: Optional[str] = Form(None),
+        content: str = Form(...),
+        is_published: bool = Form(True)
+    ):
+        try:
+            return cls(
+                title=title,
+                summary=summary,
+                content=content,
+                is_published=is_published
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class NewsUpdate(BaseModel):
@@ -298,6 +665,34 @@ class NewsUpdate(BaseModel):
     content: Optional[str] = None
     image_url: Optional[str] = None
     is_published: Optional[bool] = None
+    
+    @classmethod
+    def as_form(
+        cls,
+        title: Optional[str] = Form(None),
+        summary: Optional[str] = Form(None),
+        content: Optional[str] = Form(None),
+        is_published: Optional[bool] = Form(None)
+    ):
+        try:
+            return cls(
+                title=title,
+                summary=summary,
+                content=content,
+                is_published=is_published
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class NewsResponse(NewsBase):
@@ -319,12 +714,42 @@ class AdvisoryBoardMemberBase(BaseModel):
     institution: Optional[str] = None
     expertise: Optional[str] = None
     bio: Optional[str] = None
-    photo_url: Optional[str] = None
+    image_url: Optional[str] = None
     is_active: bool = True
 
 
 class AdvisoryBoardMemberCreate(AdvisoryBoardMemberBase):
-    pass
+    @classmethod
+    def as_form(
+        cls,
+        name: str = Form(...),
+        position: Optional[str] = Form(None),
+        institution: Optional[str] = Form(None),
+        expertise: Optional[str] = Form(None),
+        bio: Optional[str] = Form(None),
+        is_active: bool = Form(True)
+    ):
+        try:
+            return cls(
+                name=name,
+                position=position,
+                institution=institution,
+                expertise=expertise,
+                bio=bio,
+                is_active=is_active
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 
 class AdvisoryBoardMemberUpdate(BaseModel):
@@ -334,8 +759,40 @@ class AdvisoryBoardMemberUpdate(BaseModel):
     institution: Optional[str] = None
     expertise: Optional[str] = None
     bio: Optional[str] = None
-    photo_url: Optional[str] = None
+    image_url: Optional[str] = None
     is_active: Optional[bool] = None
+    
+    @classmethod
+    def as_form(
+        cls,
+        name: Optional[str] = Form(None),
+        position: Optional[str] = Form(None),
+        institution: Optional[str] = Form(None),
+        expertise: Optional[str] = Form(None),
+        bio: Optional[str] = Form(None),
+        is_active: Optional[bool] = Form(None)
+    ):
+        try:
+            return cls(
+                name=name,
+                position=position,
+                institution=institution,
+                expertise=expertise,
+                bio=bio,
+                is_active=is_active
+            )
+        except ValidationError as e:
+            errors = e.errors()
+            if errors:
+                error_msg = errors[0].get('msg', 'Validation error')
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"msg": error_msg}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"msg": "Invalid input data"}
+            )
 
 class AdvisoryBoardMemberResponse(AdvisoryBoardMemberBase):
     id: int

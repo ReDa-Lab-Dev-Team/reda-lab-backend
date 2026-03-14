@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile,
 from app.schemas.admin import AdminCreate, AdminResponse, AdminUpdate
 from sqlalchemy.orm import Session
 from app.config.database import get_db
-from app.utils.oauth2 import get_current_user
 from app.models.admin import Admin
 import os
 import shutil
@@ -17,7 +16,10 @@ service = UserService()
 
 # PUBLIC ROUTE - No authentication required
 @router.post("/register",response_model=AdminResponse)
-async def create(admin: AdminCreate = Depends(AdminCreate.as_form), avatar: UploadFile = File(...), db: Session = Depends(get_db)):
+async def create(admin: AdminCreate = Depends(AdminCreate.as_form),
+                 avatar: UploadFile = File(...),
+                 db: Session = Depends(get_db)):
+    
     db_admin = db.query(Admin).filter(
         (Admin.email == admin.email) | (Admin.username == admin.username)
     ).first()
@@ -33,7 +35,7 @@ async def create(admin: AdminCreate = Depends(AdminCreate.as_form), avatar: Uplo
     if avatar.content_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"msg": "Only image files are allowed (JPEG, PNG, WebP)"}
+            detail={"msg": "Only image files are allowed (JPEG, PNG, JPG, WebP)"}
         )
         
     if avatar:
@@ -67,7 +69,7 @@ async def create(admin: AdminCreate = Depends(AdminCreate.as_form), avatar: Uplo
     db.refresh(new_admin)
     return new_admin
 
-# PROTECTED ROUTES - Authentication required
+
 @router.get("", response_model=list[AdminResponse])
 async def read_all_admins(
     db: Session = Depends(get_db)

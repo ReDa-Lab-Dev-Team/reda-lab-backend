@@ -112,10 +112,6 @@ project_categories = Table(
 )
 
 
-# =========================================================
-# BASE MIXIN (Soft Delete + Audit)
-# =========================================================
-
 class TimestampMixin:
     created_at = Column(
         TIMESTAMP(timezone=True),
@@ -130,7 +126,6 @@ class TimestampMixin:
         onupdate=func.now(),
         index=True,
     )
-    is_deleted = Column(Boolean, nullable=False, default=False, index=True)
 
 
 # =========================================================
@@ -399,7 +394,7 @@ class TeamMember(Base, TimestampMixin):
     bio = Column(Text)
 
     email = Column(String(100), unique=True)
-    photo_url = Column(String(255))
+    image_url = Column(String(255))
 
     is_active = Column(Boolean, default=True, index=True)
 
@@ -442,7 +437,7 @@ class AdvisoryBoardMember(Base, TimestampMixin):
     expertise = Column(String(200))
     bio = Column(Text)
 
-    photo_url = Column(String(255))
+    image_url = Column(String(255))
 
     is_active = Column(Boolean, default=True, index=True)
 

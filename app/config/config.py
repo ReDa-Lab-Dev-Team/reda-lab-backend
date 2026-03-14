@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     
     # metadata uploads
-    upload_dir: str = Field(default="upload", env="UPLOAD_DIR")
+    upload_dir: str = Field(default="upload", env="UPLOAD_DIR") # find dir name in env , if not found use "upload" as default
     class Config:
         env_file = ".env"
         case_sensitive = False

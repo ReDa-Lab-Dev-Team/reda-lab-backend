@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status,Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -24,7 +24,6 @@ async def get_all_categories(
     db: Session = Depends(get_db)
     #   # no need to authenticate for categories
 ):
-    """Get all categories with pagination and filters (Admin only)"""
     try:
         query = db.query(Category)
 
@@ -54,7 +53,6 @@ async def get_category(
      db: Session = Depends(get_db)
      
 ):
-    """Get a single category by ID (Admin only)"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(
@@ -72,7 +70,6 @@ async def create_category(
     category: CategoryCreate,
     db: Session = Depends(get_db)
 ):
-    """Create a new category (Admin only)"""
     try:
         current_admin = request.state.user  
         db_category = Category(

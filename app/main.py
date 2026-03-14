@@ -127,10 +127,6 @@ app.include_router(prefix="/api/v1", router=admin_router)
 
 app.mount("/upload", StaticFiles(directory=settings.upload_dir), name="upload")
 
-# @app.get("/")
-# def read_root():
-#     return {"message": "Welcome to REDA Lab API"}
-
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     template_path = Path(__file__).parent / "templates" / "landing.html"
