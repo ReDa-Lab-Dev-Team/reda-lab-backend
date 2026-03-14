@@ -19,9 +19,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         ]
         
         # Allow access to entire upload folder
-        if request.url.path in public_routes or request.url.path.startswith('/upload/'):
+        if request.url.path in public_routes or request.url.path.startswith('/upload/') or request.url.path.startswith('/public/'):
             return await call_next(request)# Skip auth check
-
+        """
+        /login is a single endpoint → exact match works
+        /public/ is a prefix/folder with multiple endpoints like /public/advisory-members
+        """
         # print(f"Incoming request: {request.method} {request.url.path}")
 
         

@@ -11,8 +11,10 @@ from app.config.database import get_db
 from app.schemas.lab_entities import ResearchProjectCreate, ResearchProjectResponse, ProjectStatus, ResearchProjectUpdate
 from app.models.lab_entities import ResearchProject, Category, TeamMember
 from app.config.config import settings
+from app.services.public import UserService
 
 router = APIRouter(prefix="/projects", tags=["Admin - Research Projects"])
+service = UserService()
 
 # ========== READ OPERATIONS ==========
 
@@ -27,37 +29,8 @@ async def get_all_projects(
     order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)#,  
 ):
-    try:
-        query = db.query(ResearchProject)
-
-        # Apply filters
-        if search:
-            query = query.filter(
-                or_(
-                    ResearchProject.title.ilike(f"%{search}%"),
-                    ResearchProject.description.ilike(f"%{search}%")
-                )
-            )
-
-        if project_status:
-            query = query.filter(ResearchProject.status == project_status.value)
-
-        if category_id:
-            query = query.join(ResearchProject.categories).filter(Category.id == category_id)
-
-        # Apply sorting
-        order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(ResearchProject, sort_by)))
-        
-        # Apply pagination
-        projects = query.offset(skip).limit(limit).all()
-        return projects
-        
-    except SQLAlchemyError as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve projects"
-        )
+    status_value = project_status.value if project_status else None
+    return await service.get_projects(skip, limit, search, status_value, category_id, sort_by, order, db)
 
 
 @router.get("/{project_id}", response_model=ResearchProjectResponse)

@@ -12,8 +12,10 @@ from app.models.admin import Admin
 from app.schemas.lab_entities import TeamMemberCreate, TeamMemberResponse, TeamMemberUpdate
 from app.models.lab_entities import TeamMember
 from app.config.config import settings
+from app.services.public import UserService
 
 router = APIRouter(prefix="/team-members", tags=["Admin - Team Members"])
+service = UserService()
 
 # ========== READ OPERATIONS ==========
 
@@ -59,32 +61,7 @@ async def get_all_team_members(
      db: Session = Depends(get_db)
       
 ):
-    try:
-        query = db.query(TeamMember)
-
-        if search:
-            query = query.filter(
-                or_(
-                    TeamMember.name.ilike(f"%{search}%"),
-                    TeamMember.position.ilike(f"%{search}%"),
-                    TeamMember.bio.ilike(f"%{search}%")
-                )
-            )
-
-        if is_active is not None:
-            query = query.filter(TeamMember.is_active == is_active)
-
-        order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(TeamMember, sort_by)))
-        
-        # Apply pagination
-        members = query.offset(skip).limit(limit).all()
-        return members
-    except SQLAlchemyError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve team members"
-        )
+    return await service.get_team_members(skip, limit, search, is_active, sort_by, order, db)
 
 @router.get("/{member_id}", response_model=TeamMemberResponse)
 async def get_team_member_id(

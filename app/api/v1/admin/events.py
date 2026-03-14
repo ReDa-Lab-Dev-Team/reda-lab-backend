@@ -2,7 +2,6 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy import or_, desc, asc
 import os
 import shutil
 from datetime import datetime
@@ -10,14 +9,16 @@ from app.config.database import get_db
 from app.schemas.lab_entities import EventCreate, EventResponse, EventUpdate
 from app.models.lab_entities import Event, EventType
 from app.config.config import settings
+from app.services.public import UserService
 from app.utils.helper_functions import slugify
 
 router = APIRouter(prefix="/events", tags=["Admin - Events"])
+service = UserService()
 
 # ========== READ OPERATIONS ==========
 
 @router.get("", response_model=List[EventResponse])
-async def get_all_events(
+async def get_events(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
@@ -28,35 +29,37 @@ async def get_all_events(
      db: Session = Depends(get_db)
      
 ):
-    try:
-        query = db.query(Event)
+    return await service.get_events(skip, limit, search, event_type, is_active, sort_by, order, db)
 
-        if search:
-            query = query.filter(
-                or_(
-                    Event.title.ilike(f"%{search}%"),
-                    Event.description.ilike(f"%{search}%"),
-                    Event.location.ilike(f"%{search}%")
-                )
-            )
+    # try:
+    #     query = db.query(Event)
 
-        if event_type:
-            query = query.filter(Event.event_type == event_type)
+    #     if search:
+    #         query = query.filter(
+    #             or_(
+    #                 Event.title.ilike(f"%{search}%"),
+    #                 Event.description.ilike(f"%{search}%"),
+    #                 Event.location.ilike(f"%{search}%")
+    #             )
+    #         )
 
-        if is_active is not None:
-            query = query.filter(Event.is_active == is_active)
+    #     if event_type:
+    #         query = query.filter(Event.event_type == event_type)
 
-        order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(Event, sort_by)))
+    #     if is_active is not None:
+    #         query = query.filter(Event.is_active == is_active)
+
+    #     order_func = desc if order == "desc" else asc
+    #     query = query.order_by(order_func(getattr(Event, sort_by)))
         
-        # Apply pagination
-        events = query.offset(skip).limit(limit).all()
-        return events
-    except SQLAlchemyError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve events"
-        )
+    #     # Apply pagination
+    #     events = query.offset(skip).limit(limit).all()
+    #     return events
+    # except SQLAlchemyError:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="Failed to retrieve events"
+    #     )
 
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(

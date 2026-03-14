@@ -4,8 +4,6 @@ from app.config.database import get_db
 from app.models.admin import Admin
 from app.schemas.admin import Token, AdminLogin
 from app.utils import oauth2
-from app.utils.oauth2 import get_current_user
-
     
 
 
@@ -13,7 +11,7 @@ router = APIRouter(
     prefix="/login",
     tags=["Authentication"],
 )
-print("Route: ", router)
+# print("Route: ", router)
 
 
 @router.post("", response_model=Token)

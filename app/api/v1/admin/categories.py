@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status,Request
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_, desc, asc
-
 from app.config.database import get_db
 from app.schemas.lab_entities import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.models.lab_entities import Category
@@ -22,7 +21,7 @@ async def get_all_categories(
     sort_by: str = Query("name", pattern="^(name|created_at|updated_at)$"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
-    #   # no need to authenticate for categories
+
 ):
     try:
         query = db.query(Category)

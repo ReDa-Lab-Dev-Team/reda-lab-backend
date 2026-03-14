@@ -11,8 +11,10 @@ from app.models.lab_entities import ResearchClub
 from app.utils.helper_functions import slugify
 from app.config.config import settings
 from datetime import datetime
+from app.services.public import UserService
 
 router = APIRouter(prefix="/research-clubs", tags=["Admin - Research Clubs"])
+service = UserService()
 
 # ========== READ OPERATIONS ==========
 
@@ -27,33 +29,7 @@ async def get_all_research_clubs(
      db: Session = Depends(get_db)
      
 ):
-    try:
-        query = db.query(ResearchClub)
-
-        if search:
-            query = query.filter(
-                or_(
-                    ResearchClub.name.ilike(f"%{search}%"),
-                    ResearchClub.description.ilike(f"%{search}%"),
-                    ResearchClub.core_theme.ilike(f"%{search}%"),
-                    ResearchClub.leaders.ilike(f"%{search}%")
-                )
-            )
-
-        if is_active is not None:
-            query = query.filter(ResearchClub.is_active == is_active)
-
-        order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(ResearchClub, sort_by)))
-        
-        # Apply pagination
-        clubs = query.offset(skip).limit(limit).all()
-        return clubs
-    except SQLAlchemyError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve research clubs"
-        )
+    return await service.get_research_clubs(skip, limit, search, is_active, sort_by, order, db)
 
 @router.get("/{club_id}", response_model=ResearchClubResponse)
 async def get_research_club(

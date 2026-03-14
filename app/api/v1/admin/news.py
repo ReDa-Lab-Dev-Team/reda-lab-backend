@@ -12,8 +12,10 @@ from app.schemas.lab_entities import NewsCreate, NewsResponse, NewsUpdate
 from app.models.lab_entities import News, ResearchClub
 from app.utils.helper_functions import slugify
 from app.config.config import settings
+from app.services.public import UserService
 
 router = APIRouter(prefix="/news", tags=["Admin - News"])
+service = UserService()
 
 # ========== READ OPERATIONS ==========
 
@@ -28,32 +30,7 @@ async def get_all_news(
      db: Session = Depends(get_db)
      
 ):
-    try:
-        query = db.query(News)
-
-        if search:
-            query = query.filter(
-                or_(
-                    News.title.ilike(f"%{search}%"),
-                    News.summary.ilike(f"%{search}%"),
-                    News.content.ilike(f"%{search}%")
-                )
-            )
-
-        if is_published is not None:
-            query = query.filter(News.is_published == is_published)
-
-        order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(News, sort_by)))
-        
-        # Apply pagination
-        news = query.offset(skip).limit(limit).all()
-        return news
-    except SQLAlchemyError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve news"
-        )
+    return await service.get_news(skip, limit, search, is_published, sort_by, order, db)
 
 @router.get("/{news_id}", response_model=NewsResponse)
 async def get_news(

@@ -11,8 +11,10 @@ from app.config.config import settings
 import shutil
 from datetime import datetime
 from app.utils.helper_functions import slugify
+from app.services.public import UserService
 
 router = APIRouter(prefix="/research-papers", tags=["Admin - Research Papers"])
+service = UserService()
 
 # ========== READ OPERATIONS ==========
 
@@ -28,35 +30,8 @@ async def get_all_research_papers(
      db: Session = Depends(get_db)
      
 ):
-    try:
-        query = db.query(ResearchPaper)
-
-        if search:
-            query = query.filter(
-                or_(
-                    ResearchPaper.title.ilike(f"%{search}%"),
-                    ResearchPaper.abstract.ilike(f"%{search}%"),
-                    ResearchPaper.authors.ilike(f"%{search}%")
-                )
-            )
-
-        if paper_type:
-            query = query.filter(ResearchPaper.paper_type == paper_type)
-
-        if is_published is not None:
-            query = query.filter(ResearchPaper.is_published == is_published)
-
-        order_func = desc if order == "desc" else asc
-        query = query.order_by(order_func(getattr(ResearchPaper, sort_by)))
-        
-        # Apply pagination
-        papers = query.offset(skip).limit(limit).all()
-        return papers
-    except SQLAlchemyError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve research papers"
-        )
+    paper_type_value = paper_type.value if paper_type else None
+    return await service.get_research_papers(skip, limit, search, paper_type_value, is_published, sort_by, order, db)
 
 @router.get("/{paper_id}", response_model=ResearchPaperResponse)
 async def get_research_paper(

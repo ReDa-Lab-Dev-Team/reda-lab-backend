@@ -8,11 +8,11 @@ import shutil
 from app.config.config import settings
 from datetime import datetime
 from typing import Optional
-from app.services.users import UserService
+from app.services.public import UserService
 
 router = APIRouter(prefix="/user", tags=["Admin - Users"])
 
-service = UserService()
+# service = UserService()
 
 # PUBLIC ROUTE - No authentication required
 @router.post("/register",response_model=AdminResponse)
