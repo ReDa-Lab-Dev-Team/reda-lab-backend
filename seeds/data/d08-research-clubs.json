@@ -1,0 +1,82 @@
+[
+  {
+    "name": "AI & Machine Learning Research Group",
+    "description": "Exploring cutting-edge artificial intelligence and machine learning techniques with focus on deep learning, neural networks, and computer vision applications.",
+    "core_theme": "Artificial Intelligence, Deep Learning, Neural Networks",
+    "leaders": "Dr. Sarah Chen, Prof. Michael Zhang",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Quantum Computing Lab",
+    "description": "Investigating quantum algorithms, quantum cryptography, and practical applications of quantum computing in solving complex computational problems.",
+    "core_theme": "Quantum Computing, Quantum Algorithms, Quantum Cryptography",
+    "leaders": "Dr. James Wilson, Dr. Emily Parker",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Cybersecurity Research Initiative",
+    "description": "Dedicated to advancing cybersecurity technologies, threat detection, network security, and developing robust defense mechanisms against cyber attacks.",
+    "core_theme": "Network Security, Threat Intelligence, Cryptography",
+    "leaders": "Prof. Robert Martinez, Dr. Lisa Anderson",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Bioinformatics & Computational Biology",
+    "description": "Applying computational methods to analyze biological data, genomics, proteomics, and drug discovery using advanced algorithms and data science.",
+    "core_theme": "Genomics, Proteomics, Computational Biology",
+    "leaders": "Dr. Jennifer Lee, Prof. David Kim",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Internet of Things Research Hub",
+    "description": "Researching IoT architectures, smart sensors, edge computing, and developing innovative solutions for connected devices and smart cities.",
+    "core_theme": "IoT Architecture, Edge Computing, Smart Sensors",
+    "leaders": "Dr. Thomas Brown, Dr. Amanda White",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Natural Language Processing Lab",
+    "description": "Advancing research in computational linguistics, language models, sentiment analysis, and machine translation technologies.",
+    "core_theme": "NLP, Language Models, Text Mining",
+    "leaders": "Prof. Maria Garcia, Dr. Kevin Patel",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Robotics & Autonomous Systems",
+    "description": "Developing intelligent robotic systems, autonomous navigation, human-robot interaction, and exploring applications in manufacturing and healthcare.",
+    "core_theme": "Robotics, Autonomous Systems, Computer Vision",
+    "leaders": "Dr. Christopher Lee, Prof. Jessica Taylor",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Blockchain & Distributed Systems",
+    "description": "Researching blockchain technology, smart contracts, consensus algorithms, and decentralized applications for various industries.",
+    "core_theme": "Blockchain, Smart Contracts, Distributed Computing",
+    "leaders": "Dr. Andrew Johnson, Dr. Rachel Cohen",
+    "is_active": false,
+    "created_by": 1
+  },
+  {
+    "name": "Human-Computer Interaction Lab",
+    "description": "Studying user experience, interface design, accessibility, and developing intuitive human-computer interaction paradigms.",
+    "core_theme": "UX Design, Accessibility, Interactive Systems",
+    "leaders": "Prof. Michelle Robinson, Dr. Daniel Harris",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Data Science & Analytics Center",
+    "description": "Focusing on big data analytics, predictive modeling, data visualization, and extracting insights from large-scale datasets.",
+    "core_theme": "Big Data, Machine Learning, Statistical Analysis",
+    "leaders": "Dr. Steven Moore, Prof. Laura Martinez",
+    "is_active": true,
+    "created_by": 1
+  }
+]

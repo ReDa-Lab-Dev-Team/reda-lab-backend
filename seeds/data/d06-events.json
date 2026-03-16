@@ -1,0 +1,102 @@
+[
+  {
+    "title": "Introduction to Machine Learning Workshop",
+    "description": "A hands-on workshop covering the fundamentals of machine learning, including supervised and unsupervised learning algorithms. Perfect for beginners looking to start their ML journey.",
+    "start_datetime": "2026-03-15T09:00:00",
+    "end_datetime": "2026-03-15T17:00:00",
+    "location": "Building A, Room 301",
+    "event_type": "workshop",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "AI Ethics and Responsible AI Seminar",
+    "description": "Join leading experts as they discuss the ethical implications of AI systems, bias in algorithms, and frameworks for responsible AI development.",
+    "start_datetime": "2026-03-22T14:00:00",
+    "end_datetime": "2026-03-22T16:30:00",
+    "location": "Main Auditorium",
+    "event_type": "seminar",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "International Conference on Computer Vision 2026",
+    "description": "The premier annual computer vision event covering the latest research in image recognition, object detection, and visual understanding. Three days of presentations, workshops, and networking.",
+    "start_datetime": "2026-04-10T08:00:00",
+    "end_datetime": "2026-04-12T18:00:00",
+    "location": "International Convention Center",
+    "event_type": "conference",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Research Team Weekly Meeting",
+    "description": "Weekly sync-up for all research team members to discuss ongoing projects, share progress updates, and coordinate upcoming activities.",
+    "start_datetime": "2026-03-05T10:00:00",
+    "end_datetime": "2026-03-05T11:30:00",
+    "location": "Conference Room B",
+    "event_type": "meeting",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Deep Learning for Natural Language Processing Workshop",
+    "description": "Advanced workshop exploring transformer architectures, attention mechanisms, and state-of-the-art NLP models like GPT and BERT.",
+    "start_datetime": "2026-04-20T09:00:00",
+    "end_datetime": "2026-04-21T17:00:00",
+    "location": "Lab 205, Building C",
+    "event_type": "workshop",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Quantum Computing: The Next Frontier",
+    "description": "Explore the fundamentals of quantum computing, quantum algorithms, and their potential applications in solving complex computational problems.",
+    "start_datetime": "2026-05-08T15:00:00",
+    "end_datetime": "2026-05-08T17:00:00",
+    "location": "Science Hall, Room 101",
+    "event_type": "seminar",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Southeast Asian Robotics Conference 2026",
+    "description": "Regional conference bringing together robotics researchers and engineers to showcase innovations in autonomous systems, human-robot interaction, and industrial automation.",
+    "start_datetime": "2026-06-15T08:30:00",
+    "end_datetime": "2026-06-17T17:00:00",
+    "location": "Grand Hotel Convention Center",
+    "event_type": "conference",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Grant Proposal Review Meeting",
+    "description": "Internal meeting to review and finalize grant proposals before submission deadline. All principal investigators required to attend.",
+    "start_datetime": "2026-04-03T13:00:00",
+    "end_datetime": "2026-04-03T15:00:00",
+    "location": "Director's Office",
+    "event_type": "meeting",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Data Visualization and Analytics Workshop",
+    "description": "Learn to create compelling data visualizations using Python libraries like Matplotlib, Seaborn, and Plotly. Includes best practices for presenting research findings.",
+    "start_datetime": "2026-05-25T10:00:00",
+    "end_datetime": "2026-05-25T16:00:00",
+    "location": "Computer Lab 3",
+    "event_type": "workshop",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "title": "Cybersecurity in AI Systems Seminar",
+    "description": "Examining security vulnerabilities in AI systems, adversarial attacks, and defense mechanisms to protect machine learning models from exploitation.",
+    "start_datetime": "2026-06-05T14:00:00",
+    "end_datetime": "2026-06-05T16:00:00",
+    "location": "Tech Hub Auditorium",
+    "event_type": "seminar",
+    "is_active": false,
+    "created_by": 1
+  }
+]

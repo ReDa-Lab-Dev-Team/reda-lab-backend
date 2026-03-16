@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Dr. Sarah Chen",
+    "position": "Chief AI Researcher",
+    "institution": "MIT Computer Science & Artificial Intelligence Lab",
+    "expertise": "Machine Learning, Natural Language Processing, Computer Vision",
+    "bio": "Dr. Sarah Chen is a leading researcher in artificial intelligence with over 15 years of experience. She has published more than 50 papers in top-tier conferences and journals, and her work on transformer architectures has been widely cited. She currently leads the AI research division at MIT CSAIL.",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Prof. Michael Rodriguez",
+    "position": "Director of Research",
+    "institution": "Stanford University Department of Computer Science",
+    "expertise": "Distributed Systems, Cloud Computing, Cybersecurity",
+    "bio": "Professor Michael Rodriguez specializes in distributed systems and cloud infrastructure. He has been instrumental in developing scalable computing solutions adopted by major tech companies. He holds 12 patents and serves on multiple technical advisory boards.",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Dr. Aisha Patel",
+    "position": "Senior Research Scientist",
+    "institution": "Google DeepMind",
+    "expertise": "Reinforcement Learning, Robotics, Neural Networks",
+    "bio": "Dr. Aisha Patel is a pioneer in reinforcement learning applications for robotics. Her research has led to breakthrough advances in autonomous systems and human-robot interaction. She received the ACM Prize in Computing for her contributions to AI safety.",
+    "is_active": true,
+    "created_by": 1
+  },
+  {
+    "name": "Prof. James Thompson",
+    "position": "Department Head",
+    "institution": "Carnegie Mellon University Robotics Institute",
+    "expertise": "Computer Vision, 3D Reconstruction, Autonomous Vehicles",
+    "bio": "Professor James Thompson heads the Robotics Institute at CMU, where he focuses on computer vision and autonomous systems. His work on 3D scene understanding has been adopted in self-driving car technology. He is a fellow of the IEEE and AAAI.",
+    "is_active": true
+  },
+  {
+    "name": "Dr. Maria Santos",
+    "position": "Principal Researcher",
+    "institution": "Microsoft Research AI",
+    "expertise": "Quantum Computing, Algorithm Design, Optimization",
+    "bio": "Dr. Maria Santos leads quantum computing research initiatives at Microsoft Research. Her work bridges classical and quantum algorithms, with applications in cryptography and optimization. She has authored two books on quantum computing and regularly speaks at international conferences.",
+    "is_active": true,
+    "created_by": 1
+  }
+]

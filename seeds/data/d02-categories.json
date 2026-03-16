@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Data Science",
+    "description": "Big data analytics and modeling",
+    "created_by": 1
+  },
+  {
+    "name": "Robotics",
+    "description": "Autonomous robots and control systems",
+    "created_by": 1
+  },
+  {
+    "name": "Cloud Computing",
+    "description": "Distributed systems and cloud architecture",
+    "created_by": 1
+  },
+  {
+    "name": "Computer Vision",
+    "description": "Image recognition and visual AI",
+    "created_by": 1
+  },
+  {
+    "name": "Natural Language Processing",
+    "description": "Text processing and language models",
+    "created_by": 1
+  },
+  {
+    "name": "Blockchain",
+    "description": "Decentralized applications and crypto systems",
+    "created_by": 1
+  },
+  {
+    "name": "IoT",
+    "description": "Internet of Things and smart systems",
+    "created_by": 1
+  },
+  {
+    "name": "Software Engineering",
+    "description": "System design and architecture research",
+    "created_by": 1
+  }
+]
