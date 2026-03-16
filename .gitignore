@@ -17,5 +17,5 @@ dist/
 
 # custom
 *.postman_collection.json
-
+seeds/
 upload/
