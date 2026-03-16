@@ -94,7 +94,7 @@ app = FastAPI(title="REDA Lab API")
 #         allowed_hosts=["localhost", "127.0.0.1", "testserver"]
 #     )
 
-# 3. GZip compression
+# 3. GZip compressionk
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
 # 4. CORS middleware
