@@ -2,7 +2,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-# from sqlalchemy import or_, desc, asc
 import os
 import shutil
 from datetime import datetime
@@ -29,36 +28,6 @@ async def get_advisory_members(
      
 ):
     return await service.get_advisory_members(skip, limit, search, is_active, sort_by, order, db)
-    
-    # """Get all advisory board members with pagination and filters"""
-    # try:
-    #     query = db.query(AdvisoryBoardMember)
-
-    #     if search:
-    #         query = query.filter(
-    #             or_(
-    #                 AdvisoryBoardMember.name.ilike(f"%{search}%"),
-    #                 AdvisoryBoardMember.position.ilike(f"%{search}%"),
-    #                 AdvisoryBoardMember.institution.ilike(f"%{search}%"),
-    #                 AdvisoryBoardMember.expertise.ilike(f"%{search}%"),
-    #                 AdvisoryBoardMember.bio.ilike(f"%{search}%")
-    #             )
-    #         )
-
-    #     if is_active is not None:
-    #         query = query.filter(AdvisoryBoardMember.is_active == is_active)
-
-    #     order_func = desc if order == "desc" else asc
-    #     query = query.order_by(order_func(getattr(AdvisoryBoardMember, sort_by)))
-        
-    #     # Apply pagination
-    #     members = query.offset(skip).limit(limit).all()
-    #     return members
-    # except SQLAlchemyError:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="Failed to retrieve advisory board members"
-    #     )
 
 @router.get("/{member_id}", response_model=AdvisoryBoardMemberResponse)
 async def get_advisory_member(

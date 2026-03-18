@@ -13,8 +13,6 @@ from app.services.public import UserService
 router = APIRouter(prefix="/user", tags=["Admin - Users"])
 
 # service = UserService()
-
-# PUBLIC ROUTE - No authentication required
 @router.post("/register",response_model=AdminResponse)
 async def create(admin: AdminCreate = Depends(AdminCreate.as_form),
                  avatar: UploadFile = File(...),
@@ -188,86 +186,6 @@ async def update_admin(
     db.commit()
     db.refresh(admin)
     return admin
-
-# @router.post("/{admin_id}/avatar")
-# async def upload_avatar(
-#     # request need to be on top to access request.state.user
-#     request: Request,
-#     admin_id: int,
-#     file: UploadFile = File(...),
-#     db: Session = Depends(get_db)
-# ):
-#     try:
-#         current_admin = request.state.user
-#         # Allow superadmin to upload avatar for any account OR users to upload their own
-#         if current_admin.role != "superadmin" and current_admin.id != admin_id:
-#             raise HTTPException(
-#                 status_code=status.HTTP_403_FORBIDDEN,
-#                 detail={"msg": "Not authorized to update this account"}
-#             )
-        
-#         # Validate file type
-#         allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
-#         if file.content_type not in allowed_types:
-#             raise HTTPException(
-#                 status_code=status.HTTP_400_BAD_REQUEST,
-#                 detail={"msg": "Only image files are allowed (JPEG, PNG, WebP)"}
-#             )
-        
-#         # Check if admin exists BEFORE uploading
-#         admin = db.query(Admin).filter(Admin.id == admin_id).first()
-#         if not admin:
-#             raise HTTPException(
-#                 status_code=status.HTTP_404_NOT_FOUND,
-#                 detail={"msg": "Admin not found"}
-#             )
-        
-#         # Delete old avatar if exists
-#         if admin.avatar:
-#             old_avatar_path = os.path.join(settings.upload_dir, admin.avatar)
-#             if os.path.exists(old_avatar_path):
-#                 try:
-#                     os.remove(old_avatar_path)
-#                 except Exception as e:
-#                     print(f"Warning: Could not delete old avatar: {e}")
-        
-#         # Create upload directory
-#         path = os.path.join(settings.upload_dir, 'user')
-#         if not os.path.exists(path):
-#             os.makedirs(path, exist_ok=True)
-        
-#         # Create unique filename with safe extension
-#         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#         file_ext = os.path.splitext(file.filename)[1]
-#         filename = f"admin_{admin_id}_{timestamp}{file_ext}"
-#         file_location = os.path.join(path, filename)
-        
-#         # Save file
-#         with open(file_location, "wb") as buffer:
-#             shutil.copyfileobj(file.file, buffer)
-        
-#         # Store relative path instead of absolute
-#         relative_path = os.path.join('user', filename)
-#         admin.avatar = relative_path
-        
-#         db.commit()
-#         db.refresh(admin)
-        
-#         return {
-#             "avatar_url": f"/upload/{relative_path}",
-#             "msg": "Avatar uploaded successfully"
-#         }
-        
-#     except HTTPException:
-#         raise
-#     except Exception as e:
-#         # Cleanup on error
-#         if 'file_location' in locals() and os.path.exists(file_location):
-#             os.remove(file_location)
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail={"msg": f"Failed to upload avatar: {str(e)}"}
-#         )
 
 @router.delete("/delete/{admin_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_admin(

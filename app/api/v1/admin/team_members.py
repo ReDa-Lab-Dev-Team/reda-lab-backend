@@ -148,7 +148,7 @@ async def update_team_member(
      db: Session = Depends(get_db)
      
 ):
-    """Update an existing team member (Admin only)"""
+
     db_member = db.query(TeamMember).filter(TeamMember.id == member_id).first()
     if not db_member:
         raise HTTPException(
@@ -235,7 +235,7 @@ async def delete_team_member(
      db: Session = Depends(get_db)
      
 ):
-    """Delete a team member (Admin only)"""
+
     db_member = db.query(TeamMember).filter(TeamMember.id == member_id).first()
     if not db_member:
         raise HTTPException(

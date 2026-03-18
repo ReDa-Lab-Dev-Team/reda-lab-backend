@@ -31,36 +31,6 @@ async def get_events(
 ):
     return await service.get_events(skip, limit, search, event_type, is_active, sort_by, order, db)
 
-    # try:
-    #     query = db.query(Event)
-
-    #     if search:
-    #         query = query.filter(
-    #             or_(
-    #                 Event.title.ilike(f"%{search}%"),
-    #                 Event.description.ilike(f"%{search}%"),
-    #                 Event.location.ilike(f"%{search}%")
-    #             )
-    #         )
-
-    #     if event_type:
-    #         query = query.filter(Event.event_type == event_type)
-
-    #     if is_active is not None:
-    #         query = query.filter(Event.is_active == is_active)
-
-    #     order_func = desc if order == "desc" else asc
-    #     query = query.order_by(order_func(getattr(Event, sort_by)))
-        
-    #     # Apply pagination
-    #     events = query.offset(skip).limit(limit).all()
-    #     return events
-    # except SQLAlchemyError:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="Failed to retrieve events"
-    #     )
-
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(
     event_id: int,
@@ -285,55 +255,3 @@ async def delete_event(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Failed to delete event"
         )
-
-# # ========== FILE UPLOAD ==========
-
-# @router.post("/{event_id}/upload-image")
-# async def upload_event_image(
-#     event_id: int,
-#     file: UploadFile = File(...),
-#      db: Session = Depends(get_db)
-     
-# ):
-#     db_event = db.query(Event).filter(Event.id == event_id).first()
-#     if not db_event:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Event with id {event_id} not found"
-#         )
-    
-#     try:
-#         # Create directory if not exists
-#         upload_dir = os.path.join(settings.upload_dir, 'events')
-#         os.makedirs(upload_dir, exist_ok=True)
-        
-#         # Generate unique filename
-#         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#         file_extension = os.path.splitext(file.filename)[1]
-#         filename = f"event_{event_id}_{timestamp}{file_extension}"
-#         file_location = os.path.join(upload_dir, filename)
-        
-#         # Delete old image if exists
-#         if db_event.image_url and os.path.exists(db_event.image_url):
-#             os.remove(db_event.image_url)
-        
-#         # Save new file
-#         with open(file_location, "wb") as buffer:
-#             shutil.copyfileobj(file.file, buffer)
-        
-#         # Update database
-#         db_event.image_url = file_location
-#         db.commit()
-#         db.refresh(db_event)
-        
-#         return {
-#             "message": "Image uploaded successfully",
-#             "location": file_location,
-#             "content_type": file.content_type
-#         }
-#     except Exception as e:
-#         db.rollback()
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Failed to upload image: {str(e)}"
-#         )
