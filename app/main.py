@@ -65,6 +65,7 @@ app.include_router(public.router)
 app.include_router(prefix="/api/v1", router=admin_router)
 
 app.mount("/upload", StaticFiles(directory=settings.upload_dir), name="upload")
+app.mount("/public", StaticFiles(directory="public"), name="public")
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
