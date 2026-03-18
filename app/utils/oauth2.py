@@ -1,7 +1,6 @@
 # this file is for handling the authentication and authorization of users using OAuth2 and JWT tokens
 
 import jwt
-from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -39,7 +38,7 @@ def verify_access_token(token: str):
 
         return TokenData(id=id)
 
-    except InvalidTokenError:
+    except jwt.InvalidTokenError:
         return None
     
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
