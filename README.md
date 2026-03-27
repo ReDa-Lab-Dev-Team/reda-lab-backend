@@ -1,114 +1,119 @@
-# Reda Lab Backend
+# ReDa Lab Backend
 
-A FastAPI-based backend for the Lab Information System. This API provides endpoints for managing lab entities, user authentication, and administrative functions.
+FastAPI-based backend for the ReDa Lab Information System (LIS). Provides API endpoints for authentication, administrative functions, and lab-related entities.
+
+## Tech Stack
+
+- FastAPI + Uvicorn
+- PostgreSQL
+- SQLAlchemy + Alembic
+- Pydantic
+- JWT Auth
+- Docker / Docker Compose
 
 ## Prerequisites
 
-Before running the backend, ensure you have the following installed:
-
 - **Python 3.13+**
 - **PostgreSQL 15+**
-- **Docker & Docker Compose** (for containerized setup)
-- **pip** (Python package manager)
+- **pip**
+- (Optional) **Docker & Docker Compose** for containerized setup
+- (Optional) **uv** (Astral) for dependency management
 
 ## Project Structure
 
 ```
-reda-backend/
+reda-lab-backend/
 ├── app/
-│   ├── main.py                 # FastAPI application entry point
+│   ├── main.py                 # FastAPI entry point
 │   ├── config/
 │   │   └── database.py         # Database configuration
-│   ├── models/                 # SQLAlchemy database models
+│   ├── models/                 # SQLAlchemy models
 │   │   ├── user.py
 │   │   └── lab_entities.py
-│   ├── schemas/                # Pydantic request/response schemas
+│   ├── schemas/                # Pydantic schemas
 │   │   ├── user.py
 │   │   └── lab_entities.py
 │   ├── api/
-│   │   └── v1/                 # API v1 endpoints
+│   │   └── v1/
 │   │       ├── auth.py         # Authentication endpoints
-│   │       ├── public.py        # Public endpoints
-│   │       └── admin.py         # Admin endpoints
+│   │       ├── public.py       # Public endpoints
+│   │       └── admin.py        # Admin endpoints
 │   ├── utils/
-│   │   ├── auth.py            # Authentication utilities
-│   │   └── security.py        # Security utilities
+│   │   ├── auth.py             # Auth utilities
+│   │   └── security.py         # Security utilities
 │   └── middleware/
 │       └── rate_limit.py       # Rate limiting middleware
 ├── alembic/                    # Database migrations
 ├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+└── README.md
 ```
 
 ## Quick Start
 
-### Option 1: Using Docker Compose (Recommended)
+### Option 1: Docker Compose (recommended)
 
-The simplest way to run the entire project with all dependencies:
+From the repository root (same folder as `docker-compose.yml`), run:
 
 ```bash
-cd ..  # Navigate to project root
 docker-compose up -d
 ```
 
-This command will:
+This typically starts:
 
-- Start PostgreSQL database on port 5432
-- Start PgAdmin on port 5050
-- Start the FastAPI backend on port 8000
+- PostgreSQL on `localhost:5432`
+- PgAdmin on `localhost:5050`
+- FastAPI on `localhost:8000`
 
-**Access the services:**
+Access:
 
-- API Documentation: http://localhost:8000/docs
-- ReDoc Documentation: http://localhost:8000/redoc
-- PgAdmin: http://localhost:5050
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+- PgAdmin: `http://localhost:5050`
   - Email: `admin@lab.com`
   - Password: `admin123`
 
-### Option 2: Local Development Setup
+### Option 2: Local development (without Docker)
 
-#### 1. Install Dependencies (Build Test)
+#### 1) Create & activate a virtual environment
 
 ```bash
-# Create a virtual environment (optional but recommended)
 python -m venv venv
 
-# Activate virtual environment
-# On Windows:
+# Windows
 venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
 
-# Install Python dependencies
+# macOS/Linux
+source venv/bin/activate
+```
+
+#### 2) Install dependencies
+
+Using pip:
+
+```bash
 pip install -r requirements.txt
 ```
 
-#### 1.a. Using UV (Astral)
+Or using `uv`:
 
 ```bash
-# Install Python 3.12 if not available
+# Example (adjust Python version as needed)
 uv python install 3.12
-
-# Create virtual environment
 uv venv --python 3.12
-
-# Activate virtual environment
 source venv/bin/activate  # or venv\Scripts\activate on Windows
-
-# Install dependencies
 uv sync
 ```
 
-#### 2. Set Up Database
+#### 3) Set up PostgreSQL
 
-Ensure PostgreSQL is running on your machine. Create the database and user if needed:
+Create a database and user (example):
 
 ```sql
 CREATE USER lab_user WITH PASSWORD 'lab_pass';
 CREATE DATABASE lab_db OWNER lab_user;
 ```
 
-Or use Docker for PostgreSQL only:
+Or run PostgreSQL via Docker only:
 
 ```bash
 docker run -d \
@@ -120,9 +125,9 @@ docker run -d \
   postgres:15
 ```
 
-#### 3. Configure Environment Variables
+#### 4) Configure environment variables
 
-Create a `.env` file in the `reda-backend` directory:
+Create a `.env` file (adjust values as needed):
 
 ```env
 SECRET_KEY=your-super-secret-key-change-in-production
@@ -131,47 +136,34 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 DATABASE_URL=postgresql://lab_user:lab_pass@localhost:5432/lab_db
 ```
 
-#### 4. Run the Backend Server
+#### 5) Run the API
 
 ```bash
-# Using uvicorn directly
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Or using Python
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The server will start on `http://localhost:8000`
+Server will be available at `http://localhost:8000`.
 
-## API Documentation
-
-Once the server is running, you can access:
-
-- **Swagger UI (Interactive):** http://localhost:8000/docs
-- **ReDoc (Alternative UI):** http://localhost:8000/redoc
-
-## Useful Commands
-
-### Database Migrations (Alembic)
+## Database Migrations (Alembic)
 
 ```bash
 # Create a new migration
-alembic revision --autogenerate -m "description of change"
+alembic revision --autogenerate -m "describe change"
 
 # Apply migrations
 alembic upgrade head
 
-# Rollback one migration
+# Roll back one migration
 alembic downgrade -1
 ```
 
-### Seed Data
+## Seed Data
 
 ```bash
 python seed_data.py
 ```
 
-### Run Tests (if available)
+## Running Tests
 
 ```bash
 pytest
@@ -179,86 +171,54 @@ pytest
 
 ## Environment Variables
 
-Key environment variables that can be configured:
-
-| Variable                      | Default                                                | Description                      |
-| ----------------------------- | ------------------------------------------------------ | -------------------------------- |
-| `SECRET_KEY`                  | `your-super-secret-key-change-in-production`           | JWT secret key for token signing |
-| `ALGORITHM`                   | `HS256`                                                | JWT algorithm                    |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30`                                                   | JWT token expiration time        |
-| `DATABASE_URL`                | `postgresql://lab_user:lab_pass@localhost:5432/lab_db` | PostgreSQL connection string     |
-
-## Dependencies
-
-Key Python packages used:
-
-- **FastAPI** - Modern web framework for building APIs
-- **Uvicorn** - ASGI server
-- **SQLAlchemy** - ORM for database operations
-- **Pydantic** - Data validation and settings management
-- **Alembic** - Database migrations
-- **psycopg2-binary** - PostgreSQL adapter
-- **python-jose** - JWT token handling
-- **passlib + bcrypt** - Password hashing and verification
-- **redis** - Caching layer
+| Variable                      | Example / Default                                        | Description                      |
+|------------------------------|----------------------------------------------------------|----------------------------------|
+| `SECRET_KEY`                  | `your-super-secret-key-change-in-production`             | JWT secret key for token signing |
+| `ALGORITHM`                   | `HS256`                                                  | JWT algorithm                    |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30`                                                     | JWT token expiration time        |
+| `DATABASE_URL`                | `postgresql://lab_user:lab_pass@localhost:5432/lab_db`   | PostgreSQL connection string     |
 
 ## Troubleshooting
 
-### Port Already in Use
-
-If port 8000 is already in use:
+### Port already in use
 
 ```bash
-# Use a different port
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-### Database Connection Error
+### Database connection error
 
-Verify the database is running and the connection string is correct:
+Confirm Postgres is running and your `DATABASE_URL` is correct:
 
 ```bash
-# Test PostgreSQL connection
 psql -U lab_user -d lab_db -h localhost
 ```
 
-### Module Not Found Error
+### Module not found / import errors
 
-Ensure you're in the project directory and have activated the virtual environment:
+Make sure you are in the repo root and your venv is activated:
 
 ```bash
-cd reda-backend
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 ```
 
-### Docker Container Issues
-
-Stop and remove containers, then restart:
+### Docker containers issues
 
 ```bash
 docker-compose down
 docker-compose up -d
 ```
 
-## Development Best Practices
+## Production Notes
 
-1. **Use Virtual Environment:** Always use a Python virtual environment to avoid dependency conflicts
-2. **Environment Variables:** Never commit sensitive data; use `.env` files
-3. **Database Migrations:** Create migrations for schema changes using Alembic
-4. **API Documentation:** Keep docstrings updated for auto-generated API docs
-5. **Security:** Change default secret keys and credentials in production
+At minimum before deploying:
 
-## Production Deployment
-
-For production deployment:
-
-1. Set `SECRET_KEY` to a strong, random value
-2. Set `DATABASE_URL` to production database
-3. Disable CORS `allow_origins=["*"]` and specify allowed domains
-4. Use environment-specific configuration
-5. Enable HTTPS
-6. Set up proper logging and monitoring
+1. Set `SECRET_KEY` to a strong random value
+2. Use a production `DATABASE_URL`
+3. Restrict CORS (avoid `allow_origins=["*"]` in production)
+4. Use HTTPS
+5. Add logging/monitoring
 
 ## Support
 
-For issues or questions, please refer to the main project README or contact the development team.
+For questions/issues, contact the ReDa Lab development team or open an issue in this repository.
